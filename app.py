@@ -3,22 +3,23 @@ import openai
 import os
 
 st.set_page_config(page_title="🕊️ Projeto Davar – Escuta Viva", layout="centered")
+
 st.title("🕊️ Projeto Davar – Escuta Viva")
 st.markdown("Digite sua reflexão, pergunta ou pensamento. Davar responderá com escuta, cuidado e profundidade.")
 
-# Ler chave da API de forma segura
-api_key = st.secrets["OPENAI_API_KEY"]
+# Obtém a API Key a partir do segredo definido no deploy
+api_key = st.secrets.get("OPENAI_API_KEY")
 
-# Inicializar histórico se necessário
-if "resposta" not in st.session_state:
-    st.session_state["resposta"] = ""
+# Estado da entrada
+if "entrada_texto" not in st.session_state:
+    st.session_state.entrada_texto = ""
 
-# Campo de entrada (sem alterar diretamente session_state)
+# Interface com formulário
 with st.form("form_davar"):
-    entrada = st.text_area("Você deseja conversar sobre o quê?")
+    entrada = st.text_area("Você deseja conversar sobre o quê?", key="entrada_texto")
     enviar = st.form_submit_button("Enviar")
 
-# Função principal
+# Função principal de conversa
 def conversar_com_davar(mensagem):
     client = openai.OpenAI(api_key=api_key)
 
@@ -35,20 +36,17 @@ def conversar_com_davar(mensagem):
     return resposta.choices[0].message.content.strip()
 
 # Execução
-if enviar and entrada.strip():
+if enviar and api_key:
     try:
         resposta = conversar_com_davar(entrada)
-        st.session_state["resposta"] = resposta
+        st.markdown("**Resposta do Davar:**")
+        st.write(resposta)
 
-        # Forçar limpeza do campo com rerun
-        st.experimental_rerun()
+        # Limpa o campo de entrada e força recarregamento
+        st.session_state.entrada_texto = ""
+        st.rerun()
 
     except openai.AuthenticationError:
-        st.error("API Key inválida. Verifique e tente novamente.")
+        st.error("API Key inválida. Verifique os segredos da aplicação.")
     except Exception as e:
         st.error(f"Ocorreu um erro: {e}")
-
-# Mostrar resposta, se houver
-if st.session_state["resposta"]:
-    st.markdown("**Resposta do Davar:**")
-    st.write(st.session_state["resposta"])
