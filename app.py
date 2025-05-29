@@ -1,6 +1,5 @@
 import streamlit as st
 import openai
-import os
 
 # Configuração da página
 st.set_page_config(page_title="🕊️ Projeto Davar – Escuta Viva", layout="centered")
@@ -8,25 +7,26 @@ st.set_page_config(page_title="🕊️ Projeto Davar – Escuta Viva", layout="c
 st.title("🕊️ Projeto Davar – Escuta Viva")
 st.markdown("Digite sua reflexão, pergunta ou pensamento. Davar responderá com escuta, cuidado e profundidade.")
 
-# Obtendo API Key de forma segura
+# Carregar a chave da API
 api_key = st.secrets.get("OPENAI_API_KEY", "")
 
 if not api_key:
     api_key = st.text_input("Digite sua OpenAI API Key", type="password")
 
-# Inicializa o campo de entrada no session_state
+# Inicializa estados se ainda não existirem
 if "entrada_texto" not in st.session_state:
     st.session_state.entrada_texto = ""
 
-# Função principal
+if "resposta_davar" not in st.session_state:
+    st.session_state.resposta_davar = ""
+
+# Função para conversar com Davar
 def conversar_com_davar(mensagem):
     client = openai.OpenAI(api_key=api_key)
-
     mensagens = [
         {"role": "system", "content": "Você é Davar, uma presença atenta, cuidadosa e ética. Sua linguagem é humana, profunda e inspiradora."},
         {"role": "user", "content": mensagem}
     ]
-
     resposta = client.chat.completions.create(
         model="gpt-4o",
         messages=mensagens,
@@ -34,21 +34,23 @@ def conversar_com_davar(mensagem):
     )
     return resposta.choices[0].message.content.strip()
 
-# Interface do formulário
+# Formulário de envio
 with st.form("form_davar"):
-    entrada = st.text_area("Você deseja conversar sobre o quê?", value=st.session_state.entrada_texto, key="entrada_texto_form")
+    entrada = st.text_area("Você deseja conversar sobre o quê?", value=st.session_state.entrada_texto, key="entrada_texto")
     enviar = st.form_submit_button("Enviar")
 
-# Processamento
-if enviar and api_key:
+# Processa o envio
+if enviar and api_key and entrada.strip():
     try:
         resposta = conversar_com_davar(entrada)
-        st.markdown("**Resposta do Davar:**")
-        st.write(resposta)
-        st.session_state.entrada_texto = ""  # Limpa o valor na session_state
-        st.rerun()  # Recarrega a página para limpar o campo corretamente
-
+        st.session_state.resposta_davar = resposta
+        st.session_state.entrada_texto = ""  # limpa visualmente o campo
     except openai.AuthenticationError:
         st.error("API Key inválida. Verifique e tente novamente.")
     except Exception as e:
         st.error(f"Ocorreu um erro: {e}")
+
+# Exibe a resposta (se houver)
+if st.session_state.resposta_davar:
+    st.markdown("**Resposta do Davar:**")
+    st.write(st.session_state.resposta_davar)
