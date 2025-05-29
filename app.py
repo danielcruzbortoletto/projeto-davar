@@ -2,23 +2,19 @@ import streamlit as st
 import openai
 import os
 
-# Configuração da página
 st.set_page_config(page_title="🕊️ Projeto Davar – Escuta Viva", layout="centered")
 
 st.title("🕊️ Projeto Davar – Escuta Viva")
 st.markdown("Digite sua reflexão, pergunta ou pensamento. Davar responderá com escuta, cuidado e profundidade.")
 
-# Recupera a chave da API
-api_key = st.secrets.get("OPENAI_API_KEY")
-
-# Inicializa o campo no session_state, se ainda não existir
+# Inicializa estado se não existir
+if "resposta" not in st.session_state:
+    st.session_state["resposta"] = ""
 if "entrada_texto" not in st.session_state:
-    st.session_state.entrada_texto = ""
+    st.session_state["entrada_texto"] = ""
 
-# Interface do formulário
-with st.form("form_davar"):
-    entrada = st.text_area("Você deseja conversar sobre o quê?", key="entrada_texto")
-    enviar = st.form_submit_button("Enviar")
+# Campo para digitar a chave da API (em produção deixe como st.secrets["api_key"])
+api_key = st.secrets["api_key"] if "api_key" in st.secrets else st.text_input("Digite sua OpenAI API Key", type="password")
 
 # Função principal
 def conversar_com_davar(mensagem):
@@ -34,17 +30,23 @@ def conversar_com_davar(mensagem):
     )
     return resposta.choices[0].message.content.strip()
 
-# Execução da conversa
+# Interface
+with st.form("form_davar"):
+    entrada = st.text_area("Você deseja conversar sobre o quê?", value=st.session_state["entrada_texto"], key="entrada_texto_area")
+    enviar = st.form_submit_button("Enviar")
+
+# Execução
 if enviar and api_key:
     try:
-        resposta = conversar_com_davar(entrada)
-        st.markdown("**Resposta do Davar:**")
-        st.write(resposta)
-
-        # Limpa o campo de entrada
-        st.session_state.entrada_texto = ""
+        st.session_state["resposta"] = conversar_com_davar(entrada)
+        st.session_state["entrada_texto"] = ""  # reseta o estado para a próxima vez
 
     except openai.AuthenticationError:
         st.error("API Key inválida. Verifique e tente novamente.")
     except Exception as e:
         st.error(f"Ocorreu um erro: {e}")
+
+# Mostra resposta (mesmo fora do bloco do form)
+if st.session_state["resposta"]:
+    st.markdown("**Resposta do Davar:**")
+    st.write(st.session_state["resposta"])
