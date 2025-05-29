@@ -32,7 +32,7 @@ def conversar_com_davar(mensagem):
 
 # Interface do formulário
 with st.form("form_davar"):
-    entrada = st.text_area("Você deseja conversar sobre o quê?", value=st.session_state["entrada_texto"], key="entrada_texto")
+    entrada = st.text_area("Você deseja conversar sobre o quê?", key="entrada_texto")
     enviar = st.form_submit_button("Enviar")
 
 # Execução após envio
