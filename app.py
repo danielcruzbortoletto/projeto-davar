@@ -1,40 +1,39 @@
 import streamlit as st
-import os
 from openai import OpenAI
+import os
 from dotenv import load_dotenv
 
-# Carrega a chave da API do arquivo .env
+# Carrega variáveis de ambiente
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
-
-# Inicializa cliente OpenAI
 client = OpenAI(api_key=api_key)
 
-# Função de conversa com o Davar
-def conversar_com_davar(entrada):
-    mensagens = [
-        {"role": "system", "content": "Você é Davar, um assistente com escuta profunda, espiritualidade não religiosa e acolhimento humano. Responda com cuidado, clareza e leveza, sempre incentivando a reflexão."},
-        {"role": "user", "content": entrada}
+# Título do app
+st.title("🕊️ Projeto Davar – Escuta Viva")
+st.markdown("Digite sua reflexão, pergunta ou pensamento. Davar responderá com escuta, cuidado e profundidade.")
+
+# Inicializa o histórico na sessão, se ainda não existir
+if "historico" not in st.session_state:
+    st.session_state.historico = [
+        {"role": "system", "content": "Você é o Davar, um assistente que escuta com cuidado, profundidade e ética. Sua linguagem é afetuosa, reflexiva e humana. Você ajuda a elaborar pensamentos e acolher emoções."}
     ]
 
-    resposta = client.chat.completions.create(
-        model="gpt-4o",
-        messages=mensagens,
-        temperature=0.7
-    )
+# Caixa de entrada do usuário
+entrada = st.text_input("Você deseja conversar sobre o quê?")
 
-    return resposta.choices[0].message.content.strip()
-
-# Interface Streamlit
-st.title("🕊️ Projeto Davar – Escuta Viva")
-st.write("Digite sua reflexão, pergunta ou pensamento. Davar responderá com escuta, cuidado e profundidade.")
-
-entrada = st.text_area("Você deseja conversar sobre o quê?")
-
-if st.button("Conversar com Davar"):
-    if entrada.strip():
-        resposta = conversar_com_davar(entrada)
-        st.markdown("### Resposta do Davar")
-        st.write(resposta)
-    else:
-        st.warning("Por favor, escreva algo antes de clicar.")
+# Quando o usuário envia uma nova entrada
+if entrada:
+    st.session_state.historico.append({"role": "user", "content": entrada})
+    
+    try:
+        resposta = client.chat.completions.create(
+            model="gpt-4o",
+            messages=st.session_state.historico,
+            temperature=0.7
+        )
+        mensagem = resposta.choices[0].message.content
+        st.session_state.historico.append({"role": "assistant", "content": mensagem})
+        st.markdown(f"**Davar:** {mensagem}")
+    
+    except Exception as e:
+        st.error(f"Ocorreu um erro: {str(e)}")
