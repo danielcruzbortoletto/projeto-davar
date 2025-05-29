@@ -41,7 +41,7 @@ if st.button("Enviar") and entrada and api_key:
         st.write(resposta)
 
         # Limpa o campo após envio
-        st.experimental_rerun()
+        st.rerun()
 
     except openai.AuthenticationError:
         st.error("API Key inválida. Verifique e tente novamente.")
