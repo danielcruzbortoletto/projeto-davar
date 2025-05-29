@@ -7,23 +7,25 @@ st.set_page_config(page_title="🕊️ Projeto Davar – Escuta Viva", layout="c
 st.title("🕊️ Projeto Davar – Escuta Viva")
 st.markdown("Digite sua reflexão, pergunta ou pensamento. Davar responderá com escuta, cuidado e profundidade.")
 
-# Campo para digitar a chave da API (deixe em branco no deploy na nuvem)
+# Carrega a chave da API da OpenAI de forma segura
 api_key = st.secrets["api_key"] if "api_key" in st.secrets else st.text_input("Digite sua OpenAI API Key", type="password")
 
-# Interface
-with st.form("form_davar"):
-    entrada = st.text_area("Você deseja conversar sobre o quê?", key="entrada_texto")
-    enviar = st.form_submit_button("Enviar")
+# Campo de entrada fora do formulário, com controle por session_state
+entrada = st.text_area("Você deseja conversar sobre o quê?", key="entrada_texto")
 
-# Função principal
+# Função principal de chamada à OpenAI
 def conversar_com_davar(mensagem):
     client = openai.OpenAI(api_key=api_key)
-
     mensagens = [
-        {"role": "system", "content": "Você é Davar, uma presença atenta, cuidadosa e ética. Sua linguagem é humana, profunda e inspiradora."},
+        {
+            "role": "system",
+            "content": (
+                "Você é Davar, uma presença atenta, cuidadosa e ética. "
+                "Sua linguagem é humana, profunda e inspiradora. Responda com escuta ativa e sensibilidade."
+            )
+        },
         {"role": "user", "content": mensagem}
     ]
-
     resposta = client.chat.completions.create(
         model="gpt-4o",
         messages=mensagens,
@@ -31,14 +33,14 @@ def conversar_com_davar(mensagem):
     )
     return resposta.choices[0].message.content.strip()
 
-# Execução
-if enviar and api_key:
+# Quando o botão for clicado
+if st.button("Enviar") and entrada and api_key:
     try:
         resposta = conversar_com_davar(entrada)
         st.markdown("**Resposta do Davar:**")
         st.write(resposta)
 
-        # 🧠 Aqui limpamos o campo de entrada após o envio
+        # Limpa o campo após envio
         st.session_state["entrada_texto"] = ""
 
     except openai.AuthenticationError:
