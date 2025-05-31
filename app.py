@@ -18,10 +18,21 @@ if "historico" not in st.session_state:
     st.session_state.historico = []
 if "resposta" not in st.session_state:
     st.session_state.resposta = ""
-if "entrada_temp" not in st.session_state:
-    st.session_state.entrada_temp = ""
 if "contador" not in st.session_state:
     st.session_state.contador = 0
+if "limpar_input" not in st.session_state:
+    st.session_state.limpar_input = False
+
+# Campo de entrada de texto
+entrada_usuario = ""
+if st.session_state.limpar_input:
+    entrada_usuario = ""
+    st.session_state.limpar_input = False
+else:
+    entrada_usuario = st.text_area("Digite aqui sua pergunta, reflexão ou pensamento:", key="entrada_temp")
+
+# Upload de áudio
+audio = st.file_uploader("Ou envie sua voz (MP3 ou WAV)", type=["mp3", "wav"])
 
 # Função de conversa com Davar
 def conversar_com_davar(historico: List[dict]) -> str:
@@ -38,23 +49,21 @@ def conversar_com_davar(historico: List[dict]) -> str:
 
 # Formulário principal
 with st.form("form_davar"):
-    entrada = st.text_area("Digite aqui sua pergunta, reflexão ou pensamento:", key="entrada_temp")
-    audio = st.file_uploader("Ou envie sua voz (MP3 ou WAV)", type=["mp3", "wav"])
     enviar = st.form_submit_button("Enviar")
 
-# Processamento da entrada
+# Processa envio
 if enviar and api_key:
     if audio:
         st.warning("Reconhecimento de voz ainda não está ativado. Por enquanto, envie texto manualmente.")
-    if st.session_state.entrada_temp.strip():
-        entrada = st.session_state.entrada_temp.strip()
-        st.session_state.historico.append({"role": "user", "content": entrada})
+    if entrada_usuario.strip():
+        st.session_state.historico.append({"role": "user", "content": entrada_usuario})
         try:
             resposta = conversar_com_davar(st.session_state.historico)
             st.session_state.historico.append({"role": "assistant", "content": resposta})
             st.session_state.resposta = resposta
             st.session_state.contador += 1
-            st.session_state.update({"entrada_temp": ""})  # limpa entrada com segurança
+            st.session_state.limpar_input = True  # força limpeza na próxima renderização
+            st.rerun()  # reinicia sem erro
         except openai.AuthenticationError:
             st.error("API Key inválida. Verifique e tente novamente.")
         except Exception as e:
