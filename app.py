@@ -1,56 +1,47 @@
 import streamlit as st
 import openai
+import tempfile
+import os
 
+# Mensagem de boas-vindas e privacidade
 st.set_page_config(page_title="🕊️ Projeto Davar – Escuta Viva", layout="centered")
-
 st.title("🕊️ Projeto Davar – Escuta Viva")
-st.markdown("Digite sua reflexão, pergunta ou pensamento. Davar responderá com escuta, cuidado e profundidade.")
+st.markdown("Digite ou grave sua pergunta/reflexão abaixo. Davar responderá com escuta, cuidado e profundidade.")
+st.markdown("🔒 Todas as conversas são privadas e não são armazenadas. Use com liberdade e respeito.")
 
-# Chave da API
-api_key = st.secrets.get("OPENAI_API_KEY") or st.text_input("Digite sua OpenAI API Key", type="password")
+# Configurar chave da API OpenAI
+openai.api_key = st.secrets.get("openai_api_key", "SUA_CHAVE_AQUI")
 
-# Inicializa sessão
-if "historico" not in st.session_state:
-    st.session_state.historico = []  # armazena múltiplas mensagens
-if "resposta" not in st.session_state:
-    st.session_state.resposta = ""
-if "entrada_temp" not in st.session_state:
-    st.session_state.entrada_temp = ""
+# Entrada de texto como alternativa à voz
+text_input = st.text_input("Digite aqui sua pergunta, reflexão ou pensamento:")
 
-# Função de conversa com histórico
-def conversar_com_davar(historico):
-    client = openai.OpenAI(api_key=api_key)
+# Upload de áudio (opcional)
+audio_file = st.file_uploader("Ou grave sua voz (MP3/WAV)", type=["mp3", "wav"])
 
-    mensagens = [{"role": "system", "content": 
-        "Você é Davar, uma presença atenta, cuidadosa e ética. Sua linguagem é humana, profunda e inspiradora."}] + historico
+# Transcrição de áudio com Whisper
+transcribed_text = ""
+if audio_file is not None and st.button("Transcrever áudio"):
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        tmp.write(audio_file.read())
+        tmp_path = tmp.name
+    with open(tmp_path, "rb") as f:
+        transcript = openai.Audio.transcribe("whisper-1", f, language="pt")
+        transcribed_text = transcript["text"]
+        st.success(f"🗣️ Transcrição: {transcribed_text}")
+        os.remove(tmp_path)
 
-    resposta = client.chat.completions.create(
-        model="gpt-4o",
-        messages=mensagens,
-        temperature=0.7
-    )
-    return resposta.choices[0].message.content.strip()
+# Escolher qual texto usar como input final
+final_input = transcribed_text if transcribed_text else text_input
 
-# Formulário
-with st.form("form_davar"):
-    entrada = st.text_area("Você deseja conversar sobre o quê?", key="entrada_temp")
-    enviar = st.form_submit_button("Enviar")
-
-# Processa envio
-if enviar and api_key:
-    try:
-        st.session_state.historico.append({"role": "user", "content": entrada})
-        resposta = conversar_com_davar(st.session_state.historico)
-        st.session_state.historico.append({"role": "assistant", "content": resposta})
-        st.session_state.resposta = resposta
-        st.session_state.entrada_temp = ""  # limpa campo
-
-    except openai.AuthenticationError:
-        st.error("API Key inválida. Verifique e tente novamente.")
-    except Exception as e:
-        st.error(f"Ocorreu um erro: {e}")
-
-# Exibe resposta
-if st.session_state.resposta:
-    st.markdown("**Resposta do Davar:**")
-    st.write(st.session_state.resposta)
+# Enviar para o Davar (modelo GPT)
+if final_input and st.button("Perguntar ao Davar"):
+    with st.spinner("Davar está escutando..."):
+        resposta = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "Você é o Davar, uma IA com escuta sensível, empática e profunda."},
+                {"role": "user", "content": final_input}
+            ]
+        )
+        st.markdown("### 🕊️ Resposta do Davar:")
+        st.write(resposta["choices"][0]["message"]["content"])
