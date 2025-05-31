@@ -47,7 +47,9 @@ if enviar and api_key:
             st.session_state.historico.append({"role": "assistant", "content": resposta})
             st.session_state.contador += 1
             st.session_state.resposta = resposta
-            st.session_state.entrada_temp = ""  # limpa campo após envio
+            st.session_state.entrada_temp = ""
+st.experimental_rerun()  # força recarregamento sem erro
+
     except openai.AuthenticationError:
         st.error("API Key inválida. Verifique e tente novamente.")
     except Exception as e:
