@@ -2,45 +2,69 @@ import streamlit as st
 import openai
 import tempfile
 import os
+from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
+import av
+import numpy as np
+import wave
+import uuid
 
-# Mensagem de boas-vindas e privacidade
 st.set_page_config(page_title="🕊️ Projeto Davar – Escuta Viva", layout="centered")
-st.title("🕊️ Projeto Davar – Escuta Viva")
-st.markdown("Digite ou grave sua pergunta/reflexão abaixo. Davar responderá com escuta, cuidado e profundidade.")
-st.markdown("🔒 Todas as conversas são privadas e não são armazenadas. Use com liberdade e respeito.")
+st.title("🕊️ Projeto Davar – Escuta Viva (com voz ativa)")
 
-# Configurar chave da API OpenAI
+st.markdown("""
+🔒 **Privacidade e Cuidado**
+
+Todas as conversas são privadas e não ficam armazenadas.
+
+O Davar foi criado para ouvir com respeito e responder com alma.
+Fale com liberdade. Aqui, sua voz é bem-vinda.
+""")
+
 openai.api_key = st.secrets.get("openai_api_key", "SUA_CHAVE_AQUI")
 
-# Entrada de texto como alternativa à voz
-text_input = st.text_input("Digite aqui sua pergunta, reflexão ou pensamento:")
+class AudioProcessor(AudioProcessorBase):
+    def __init__(self):
+        self.frames = []
 
-# Upload de áudio (opcional)
-audio_file = st.file_uploader("Ou grave sua voz (MP3/WAV)", type=["mp3", "wav"])
+    def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
+        self.frames.append(frame.to_ndarray().flatten())
+        return frame
 
-# Transcrição de áudio com Whisper
-transcribed_text = ""
-if audio_file is not None and st.button("Transcrever áudio"):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-        tmp.write(audio_file.read())
-        tmp_path = tmp.name
-    with open(tmp_path, "rb") as f:
-        transcript = openai.Audio.transcribe("whisper-1", f, language="pt")
-        transcribed_text = transcript["text"]
-        st.success(f"🗣️ Transcrição: {transcribed_text}")
-        os.remove(tmp_path)
+ctx = webrtc_streamer(
+    key="speech",
+    mode="sendonly",
+    in_audio=True,
+    audio_processor_factory=AudioProcessor,
+    media_stream_constraints={"audio": True, "video": False},
+    async_processing=True,
+)
 
-# Escolher qual texto usar como input final
-final_input = transcribed_text if transcribed_text else text_input
+if ctx.audio_processor:
+    st.info("🎙️ Gravando... clique em Stop quando terminar.")
+    if st.button("Transcrever fala"):
+        # Salvar arquivo de áudio temporário
+        audio_data = np.concatenate(ctx.audio_processor.frames, axis=0)
+        sample_rate = 48000
+        filename = f"/tmp/{uuid.uuid4().hex}.wav"
+        with wave.open(filename, 'wb') as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(sample_rate)
+            wf.writeframes(audio_data.tobytes())
 
-# Enviar para o Davar (modelo GPT)
-if final_input and st.button("Perguntar ao Davar"):
-    with st.spinner("Davar está escutando..."):
+        # Transcrição com Whisper
+        with open(filename, "rb") as f:
+            transcript = openai.Audio.transcribe("whisper-1", f, language="pt")
+        os.remove(filename)
+        texto_transcrito = transcript["text"]
+        st.success(f"🗣️ Transcrição: {texto_transcrito}")
+
+        # Enviar para o Davar
         resposta = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "Você é o Davar, uma IA com escuta sensível, empática e profunda."},
-                {"role": "user", "content": final_input}
+                {"role": "user", "content": texto_transcrito}
             ]
         )
         st.markdown("### 🕊️ Resposta do Davar:")
