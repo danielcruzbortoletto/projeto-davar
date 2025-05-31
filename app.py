@@ -17,11 +17,14 @@ if "resposta" not in st.session_state:
     st.session_state.resposta = ""
 if "contador" not in st.session_state:
     st.session_state.contador = 0
+if "entrada_temp" not in st.session_state:
+    st.session_state.entrada_temp = ""
 
 # Função de conversa
 def conversar_com_davar(historico):
     client = openai.OpenAI(api_key=api_key)
-    mensagens = [{"role": "system", "content": "Você é Davar, uma presença atenta, cuidadosa e ética. Sua linguagem é humana, profunda e inspiradora."}] + historico
+    mensagens = [{"role": "system", "content": 
+        "Você é Davar, uma presença atenta, cuidadosa e ética. Sua linguagem é humana, profunda e inspiradora."}] + historico
     resposta = client.chat.completions.create(
         model="gpt-4o",
         messages=mensagens,
@@ -31,39 +34,38 @@ def conversar_com_davar(historico):
 
 # Formulário
 with st.form("form_davar"):
-    entrada = st.text_area("Digite aqui sua pergunta, reflexão ou pensamento:", value="", key="entrada_temp")
+    entrada = st.text_area("Digite aqui sua pergunta, reflexão ou pensamento:", value=st.session_state.entrada_temp, key="entrada_temp")
     audio = st.file_uploader("Ou envie sua voz (MP3/WAV)", type=["mp3", "wav"])
     enviar = st.form_submit_button("Enviar")
 
 # Processa envio
 if enviar and api_key:
-    try:
-        if audio:
-            st.warning("Reconhecimento de voz ainda não está ativado. Por enquanto, envie texto manualmente.")
-        if st.session_state.entrada_temp.strip():
-            entrada = st.session_state.entrada_temp.strip()
-            st.session_state.historico.append({"role": "user", "content": entrada})
+    if audio:
+        st.warning("Reconhecimento de voz ainda não está ativado. Por enquanto, envie texto manualmente.")
+    if st.session_state.entrada_temp.strip():
+        entrada = st.session_state.entrada_temp.strip()
+        st.session_state.historico.append({"role": "user", "content": entrada})
+        try:
             resposta = conversar_com_davar(st.session_state.historico)
             st.session_state.historico.append({"role": "assistant", "content": resposta})
             st.session_state.contador += 1
             st.session_state.resposta = resposta
             st.session_state.entrada_temp = ""
-st.experimental_rerun()  # força recarregamento sem erro
-
-    except openai.AuthenticationError:
-        st.error("API Key inválida. Verifique e tente novamente.")
-    except Exception as e:
-        st.error(f"Ocorreu um erro: {e}")
+            st.experimental_rerun()
+        except openai.AuthenticationError:
+            st.error("API Key inválida. Verifique e tente novamente.")
+        except Exception as e:
+            st.error(f"Ocorreu um erro: {e}")
 
 # Exibe histórico da sessão
 if st.session_state.historico:
     st.markdown("### Histórico da sessão:")
-    for i, troca in enumerate(st.session_state.historico):
+    for troca in st.session_state.historico:
         if troca["role"] == "user":
             st.markdown(f"**Você:** {troca['content']}")
         else:
             st.markdown(f"**Davar:** {troca['content']}")
 
-# Botão para mostrar estatísticas
+# Estatísticas
 with st.expander("📊 Ver estatísticas do Davar"):
     st.markdown(f"Total de interações nesta sessão: **{st.session_state.contador}**")
