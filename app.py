@@ -1,7 +1,8 @@
 import streamlit as st
 import openai
-from io import BytesIO
+from typing import List
 
+# Configuração da página
 st.set_page_config(page_title="🕊️ Projeto Davar – Escuta Viva", layout="centered")
 
 # Título e descrição
@@ -12,26 +13,21 @@ st.markdown("🔒 Todas as conversas são privadas e não são armazenadas. Use 
 # Chave da API
 api_key = st.secrets.get("OPENAI_API_KEY") or st.text_input("Digite sua OpenAI API Key", type="password")
 
-# Inicialização de estado
+# Inicialização do estado da sessão
 if "historico" not in st.session_state:
     st.session_state.historico = []
 if "resposta" not in st.session_state:
     st.session_state.resposta = ""
+if "entrada_temp" not in st.session_state:
+    st.session_state.entrada_temp = ""
 if "contador" not in st.session_state:
     st.session_state.contador = 0
-if "clear_input" not in st.session_state:
-    st.session_state.clear_input = False
 
-# Limpeza do campo de entrada após envio
-if st.session_state.clear_input:
-    st.session_state.entrada_temp = ""
-    st.session_state.clear_input = False
-
-# Função principal de conversa
-def conversar_com_davar(historico):
+# Função de conversa com Davar
+def conversar_com_davar(historico: List[dict]) -> str:
     client = openai.OpenAI(api_key=api_key)
     mensagens = [{"role": "system", "content":
-        "Você é Davar, uma presença atenta, cuidadosa e ética. Sua linguagem é humana, profunda e inspiradora."}] + historico
+                  "Você é Davar, uma presença ética, atenta, sensível e profunda. Responda com linguagem humana e acolhedora."}] + historico
 
     resposta = client.chat.completions.create(
         model="gpt-4o",
@@ -40,12 +36,10 @@ def conversar_com_davar(historico):
     )
     return resposta.choices[0].message.content.strip()
 
-# Formulário de entrada
+# Formulário principal
 with st.form("form_davar"):
-    st.markdown("**Digite aqui sua pergunta, reflexão ou pensamento:**")
-    entrada = st.text_area("", key="entrada_temp")
-    st.markdown("**Ou envie sua voz (MP3 ou WAV)**")
-    audio = st.file_uploader("Drag and drop file here", type=["mp3", "wav"])
+    entrada = st.text_area("Digite aqui sua pergunta, reflexão ou pensamento:", key="entrada_temp")
+    audio = st.file_uploader("Ou envie sua voz (MP3 ou WAV)", type=["mp3", "wav"])
     enviar = st.form_submit_button("Enviar")
 
 # Processamento da entrada
@@ -60,21 +54,27 @@ if enviar and api_key:
             st.session_state.historico.append({"role": "assistant", "content": resposta})
             st.session_state.resposta = resposta
             st.session_state.contador += 1
-            st.session_state.clear_input = True
-            st.experimental_rerun()
+            st.session_state.update({"entrada_temp": ""})  # limpa entrada com segurança
         except openai.AuthenticationError:
             st.error("API Key inválida. Verifique e tente novamente.")
         except Exception as e:
             st.error(f"Ocorreu um erro: {e}")
 
-# Exibição do histórico
+# Exibe resposta atual
+if st.session_state.resposta:
+    st.markdown("**Resposta do Davar:**")
+    st.write(st.session_state.resposta)
+
+# Histórico da sessão
 if st.session_state.historico:
     st.markdown("---")
-    st.subheader("Histórico desta sessão:")
-    for i, msg in enumerate(st.session_state.historico):
-        autor = "Você" if msg["role"] == "user" else "Davar"
-        st.markdown(f"**{autor}:** {msg['content']}")
+    st.markdown("### Histórico desta sessão:")
+    for i, item in enumerate(st.session_state.historico):
+        if item["role"] == "user":
+            st.markdown(f"**Você:** {item['content']}")
+        elif item["role"] == "assistant":
+            st.markdown(f"**Davar:** {item['content']}")
 
-# Estatísticas (contador de respostas)
+# Estatísticas ocultas
 with st.expander("📊 Ver estatísticas do Davar"):
-    st.markdown(f"Respostas dadas nesta sessão: **{st.session_state.contador}**")
+    st.write(f"Total de respostas geradas nesta sessão: {st.session_state.contador}")
