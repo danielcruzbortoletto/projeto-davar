@@ -1,9 +1,9 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import os
 
-# Configuração da chave da OpenAI
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Inicializar cliente da OpenAI com chave da API
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 st.set_page_config(page_title="Projeto Davar", layout="wide")
 
@@ -39,13 +39,13 @@ with col2:
     if st.button("Enviar"):
         if pergunta.strip() != "":
             with st.spinner("Davar está refletindo..."):
-                resposta = openai.ChatCompletion.create(
+                resposta = client.chat.completions.create(
                     model="gpt-4",
                     messages=[
                         {"role": "system", "content": "Você é o Davar, uma IA que escuta com empatia e responde com sabedoria."},
                         {"role": "user", "content": pergunta}
                     ]
-                )["choices"][0]["message"]["content"]
+                ).choices[0].message.content
 
                 st.session_state['mensagens'].append({
                     "pergunta": pergunta,
