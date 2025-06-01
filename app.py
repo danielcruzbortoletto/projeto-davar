@@ -16,7 +16,7 @@ if 'mensagens' not in st.session_state:
 st.title("🤖 Projeto Davar – Escuta com Inteligência e Presença")
 
 # Cria o layout com duas colunas: histórico (col1) e interação (col2)
-col1, col2 = st.columns([1, 2])
+col1, col2 = st.columns([2, 1])
 
 # Coluna da esquerda: histórico da sessão com aviso de privacidade
 with col1:
