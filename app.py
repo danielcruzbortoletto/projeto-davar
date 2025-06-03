@@ -21,15 +21,13 @@ st.markdown("""
 # ESTADO INICIAL
 if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
-if "input_processed" not in st.session_state:
-    st.session_state["input_processed"] = False
 
 # BOTÃO PARA NOVA CONVERSA
 if st.button("🧹 Nova conversa"):
     st.session_state["chat_history"] = []
     st.experimental_rerun()
 
-# GRAVAÇÃO NO NAVEGADOR (opcional)
+# GRAVAÇÃO NO NAVEGADOR
 with st.expander("🎤 Gravar direto do navegador (opcional)"):
     components.html(
         """
@@ -107,10 +105,12 @@ if audio_file:
         resposta_texto = resposta.choices[0].message.content.strip()
         st.session_state["chat_history"].append({"role": "assistant", "content": resposta_texto})
 
-# ENTRADA DE TEXTO
-user_input = st.text_input("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", key="entrada_temp")
+# ENTRADA DE TEXTO VIA FORM
+with st.form("formulario_davar"):
+    user_input = st.text_input("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", key="entrada_temp")
+    enviar = st.form_submit_button("Enviar")
 
-if user_input and not st.session_state["input_processed"]:
+if enviar and user_input:
     st.session_state["chat_history"].append({"role": "user", "content": user_input})
 
     response = client.chat.completions.create(
@@ -127,12 +127,6 @@ if user_input and not st.session_state["input_processed"]:
     )
     resposta = response.choices[0].message.content.strip()
     st.session_state["chat_history"].append({"role": "assistant", "content": resposta})
-
-    # Não limpa manualmente; o experimental_rerun reinicia com campo vazio
-    st.session_state["input_processed"] = True
-    st.experimental_rerun()
-else:
-    st.session_state["input_processed"] = False
 
 # HISTÓRICO EM ORDEM DECRESCENTE
 for mensagem in reversed(st.session_state["chat_history"]):
