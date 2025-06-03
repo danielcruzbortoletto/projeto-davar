@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 import os
+import io
 
 # Inicializa cliente da API OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -25,9 +26,13 @@ user_input = ""
 
 if audio_file:
     with st.spinner("Transcrevendo áudio..."):
+        audio_bytes = audio_file.read()
+        audio_buffer = io.BytesIO(audio_bytes)
+        audio_buffer.name = audio_file.name  # Necessário para a API
+
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
-            file=audio_file
+            file=audio_buffer
         )
         user_input = transcript.text
         st.markdown(f"**Você disse (transcrito):** {user_input}")
