@@ -1,12 +1,12 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import os
 
-# Config da API
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Inicializa cliente da API OpenAI
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Configura página
 st.set_page_config(page_title="Projeto Davar", layout="centered")
-
 st.title("🤖 Davar – escuta com presença")
 st.markdown("🔒 Nenhuma conversa é salva. Ao fechar esta aba, tudo será apagado.")
 
@@ -14,26 +14,40 @@ st.markdown("🔒 Nenhuma conversa é salva. Ao fechar esta aba, tudo será apag
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Botão para limpar conversa
+# Botão para nova conversa
 if st.button("🧹 Nova conversa"):
     st.session_state.chat_history = []
     st.experimental_rerun()
 
-# Entrada do usuário
-user_input = st.text_input("Escreva aqui sua pergunta, desabafo ou reflexão:")
+# Upload de áudio
+audio_file = st.file_uploader("Ou envie sua fala como áudio (MP3, WAV, M4A):", type=["mp3", "wav", "m4a"])
+user_input = ""
+
+if audio_file:
+    with st.spinner("Transcrevendo áudio..."):
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file
+        )
+        user_input = transcript.text
+        st.markdown(f"**Você disse (transcrito):** {user_input}")
+
+else:
+    # Entrada de texto
+    user_input = st.text_input("Escreva aqui sua pergunta, desabafo ou reflexão:")
 
 # Função para gerar resposta com histórico
 def gerar_resposta_com_gpt(historico):
     messages = [{"role": "system", "content": "Você é o Davar, um parceiro de escuta. Responda com empatia, profundidade e presença."}]
     messages.extend(historico)
-    resposta = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4o",
         messages=messages,
         temperature=0.7
     )
-    return resposta.choices[0].message.content.strip()
+    return response.choices[0].message.content.strip()
 
-# Processa entrada do usuário
+# Processa entrada
 if user_input:
     st.session_state.chat_history.append({"role": "user", "content": user_input})
     resposta = gerar_resposta_com_gpt(st.session_state.chat_history)
