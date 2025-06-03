@@ -21,10 +21,10 @@ st.markdown("""
 # ESTADOS INICIAIS
 if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
-if "user_input" not in st.session_state:
-    st.session_state["user_input"] = ""
 if "input_processed" not in st.session_state:
     st.session_state["input_processed"] = False
+if "texto_temp" not in st.session_state:
+    st.session_state["texto_temp"] = ""
 
 # BOTÃO NOVA CONVERSA
 if st.button("🧹 Nova conversa"):
@@ -79,8 +79,6 @@ with st.expander("🎤 Gravar direto do navegador (opcional)"):
 
 # UPLOAD DE ÁUDIO
 audio_file = st.file_uploader("📁 Envie seu áudio (MP3, WAV, M4A):", type=["mp3", "wav", "m4a"])
-user_input = ""
-
 if audio_file:
     with st.spinner("🎧 Transcrevendo áudio..."):
         audio_bytes = audio_file.read()
@@ -90,7 +88,7 @@ if audio_file:
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
             file=audio_buffer,
-            language="pt"  # força idioma português
+            language="pt"
         )
         user_input = transcript.text
         st.markdown(f"**Você disse (transcrito):** {user_input}")
@@ -112,9 +110,8 @@ if audio_file:
         st.session_state["chat_history"].append({"role": "assistant", "content": resposta_texto})
 
 # ENTRADA DE TEXTO
-user_input = st.text_input("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", key="user_input")
+user_input = st.text_input("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", key="texto_temp")
 
-# PROCESSAMENTO DO TEXTO
 if user_input and not st.session_state["input_processed"]:
     st.session_state["chat_history"].append({"role": "user", "content": user_input})
 
@@ -133,7 +130,7 @@ if user_input and not st.session_state["input_processed"]:
     resposta = response.choices[0].message.content.strip()
     st.session_state["chat_history"].append({"role": "assistant", "content": resposta})
 
-    st.session_state["user_input"] = ""
+    st.session_state["texto_temp"] = ""  # limpeza segura
     st.session_state["input_processed"] = True
     st.experimental_rerun()
 else:
