@@ -13,7 +13,7 @@ st.markdown("""
 > **🌱 Bem-vindo ao Davar**  
 > Aqui, você encontra uma escuta com presença, sem julgamentos.  
 > Um espaço para respirar, pensar, sentir e recomeçar.
->
+
 > 🔒 Nenhuma conversa é salva. Ao fechar esta aba, tudo é apagado.
 """)
 
@@ -40,7 +40,7 @@ if audio_file:
         user_input = transcript.text
         st.markdown(f"**Você disse (transcrito):** {user_input}")
 else:
-    user_input = st.text_input("Escreva aqui sua pergunta, desabafo ou reflexão:")
+    user_input = st.text_input("Escreva aqui sua pergunta, desabafo ou reflexão:", key="user_input")
 
 # NOVO PROMPT DO DAVAR
 def gerar_resposta_com_gpt(historico):
@@ -66,9 +66,12 @@ if user_input:
     st.session_state.chat_history.append({"role": "user", "content": user_input})
     resposta = gerar_resposta_com_gpt(st.session_state.chat_history)
     st.session_state.chat_history.append({"role": "assistant", "content": resposta})
+    st.session_state["user_input"] = ""  # limpa o campo após envio
 
-for mensagem in st.session_state.chat_history:
+# Exibe histórico em ordem decrescente (mais recente no topo)
+for mensagem in reversed(st.session_state.chat_history):
     if mensagem["role"] == "user":
         st.markdown(f"**Você:** {mensagem['content']}")
     elif mensagem["role"] == "assistant":
         st.markdown(f"**Davar:** {mensagem['content']}")
+
