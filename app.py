@@ -1,52 +1,51 @@
 import streamlit as st
-from openai import OpenAI
+import openai
 import os
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Configuração da API
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 st.set_page_config(page_title="Projeto Davar", layout="centered")
 
-if 'mensagens' not in st.session_state:
-    st.session_state['mensagens'] = []
+# Aviso de privacidade
+st.markdown("🔒 As conversas não são salvas. Ao fechar esta aba, tudo será apagado.")
 
-st.title("🤖 Projeto Davar – Escuta com Inteligência e Presença")
+# Inicializa o histórico se ainda não existir
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-# 🔒 Aviso de privacidade
-st.info("🔒 **Privacidade garantida:** suas perguntas não são salvas após fechar esta janela. Nenhum dado é armazenado em servidor. Esta é uma escuta segura e efêmera — como uma boa conversa deve ser.")
+# Título do app
+st.title("🤖 Davar – escuta com presença")
 
-# 🗂️ Histórico da conversa em ordem decrescente (mais recente no topo)
-if st.session_state['mensagens']:
-    for m in reversed(st.session_state['mensagens']):
-        st.markdown(f"**Você:** {m['pergunta']}")
-        st.markdown(f"**Davar:** {m['resposta']}")
-        st.markdown("---")
-else:
-    st.info("Nenhuma pergunta feita ainda.")
+# Campo de entrada de texto
+user_input = st.text_input("Digite sua pergunta ou reflexão:")
 
-# 💬 Campo de entrada ao final da página
-st.markdown("### ✍️ Escreva sua pergunta")
+# Função para gerar resposta com histórico
+def gerar_resposta_com_gpt(historico):
+    resposta = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "Você é o Davar, um parceiro de escuta. Responda com empatia, profundidade e respeito."},
+            *historico
+        ],
+        temperature=0.7
+    )
+    return resposta.choices[0].message.content
 
-with st.form("form_chat", clear_on_submit=True):
-    pergunta = st.text_input("Digite aqui sua pergunta", placeholder="Como você está hoje?", label_visibility="collapsed")
-    submitted = st.form_submit_button("Enviar")
+# Se o usuário enviar uma pergunta
+if user_input:
+    # Adiciona pergunta ao histórico
+    st.session_state.chat_history.append({"role": "user", "content": user_input})
 
-if submitted and pergunta.strip():
-    with st.spinner("Davar está refletindo..."):
-        try:
-            resposta = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "Você é o Davar, uma IA que escuta com empatia e responde com sabedoria."},
-                    {"role": "user", "content": pergunta}
-                ]
-            ).choices[0].message.content
+    # Gera resposta com histórico
+    resposta = gerar_resposta_com_gpt(st.session_state.chat_history)
 
-            st.session_state['mensagens'].append({
-                "pergunta": pergunta,
-                "resposta": resposta
-            })
+    # Adiciona resposta ao histórico
+    st.session_state.chat_history.append({"role": "assistant", "content": resposta})
 
-            st.markdown(f"**Davar:** {resposta}")
-
-        except Exception as e:
-            st.error("⚠️ Ocorreu um erro ao processar sua pergunta. Tente novamente.")
+# Exibe a conversa
+for mensagem in st.session_state.chat_history:
+    if mensagem["role"] == "user":
+        st.markdown(f"**Você:** {mensagem['content']}")
+    elif mensagem["role"] == "assistant":
+        st.markdown(f"**Davar:** {mensagem['content']}")
