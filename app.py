@@ -18,11 +18,11 @@ st.markdown("""
 > 🔒 Nenhuma conversa é salva. Ao fechar esta aba, tudo é apagado.
 """)
 
-# ESTADOS
+# ESTADOS INICIAIS
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "user_input" not in st.session_state:
-    st.session_state.user_input = ""
+    st.session_state["user_input"] = ""
 if "input_processed" not in st.session_state:
     st.session_state.input_processed = False
 
@@ -31,7 +31,7 @@ if st.button("🧹 Nova conversa"):
     st.session_state.chat_history = []
     st.experimental_rerun()
 
-# BLOCO DE MICROFONE VIA HTML
+# MICROFONE NO NAVEGADOR (HTML/JS)
 with st.expander("🎤 Gravar direto do navegador (opcional)"):
     components.html(
         """
@@ -77,8 +77,8 @@ with st.expander("🎤 Gravar direto do navegador (opcional)"):
         height=300
     )
 
-# UPLOAD DE ÁUDIO PARA TRANSCRIÇÃO
-audio_file = st.file_uploader("📁 Envie seu áudio gravado (MP3, WAV, M4A):", type=["mp3", "wav", "m4a"])
+# UPLOAD DE ÁUDIO
+audio_file = st.file_uploader("📁 Envie seu áudio (MP3, WAV, M4A):", type=["mp3", "wav", "m4a"])
 user_input = ""
 
 if audio_file:
@@ -89,11 +89,13 @@ if audio_file:
 
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
-            file=audio_buffer
+            file=audio_buffer,
+            language="pt"  # ✅ Força transcrição em português
         )
         user_input = transcript.text
         st.markdown(f"**Você disse (transcrito):** {user_input}")
         st.session_state.chat_history.append({"role": "user", "content": user_input})
+
         resposta = client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -112,7 +114,7 @@ if audio_file:
 # ENTRADA DE TEXTO
 user_input = st.text_input("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", key="user_input")
 
-# RESPOSTA POR TEXTO
+# PROCESSAMENTO DO TEXTO COM LIMPEZA SEGURA
 if user_input and not st.session_state.input_processed:
     st.session_state.chat_history.append({"role": "user", "content": user_input})
 
@@ -131,13 +133,13 @@ if user_input and not st.session_state.input_processed:
     resposta = response.choices[0].message.content.strip()
     st.session_state.chat_history.append({"role": "assistant", "content": resposta})
 
-    st.session_state.user_input = ""
+    st.session_state["user_input"] = ""  # ✅ limpa o campo de forma segura
     st.session_state.input_processed = True
     st.experimental_rerun()
 else:
     st.session_state.input_processed = False
 
-# EXIBIÇÃO DO HISTÓRICO (RECENTE NO TOPO)
+# HISTÓRICO EM ORDEM DECRESCENTE
 for mensagem in reversed(st.session_state.chat_history):
     if mensagem["role"] == "user":
         st.markdown(f"**Você:** {mensagem['content']}")
