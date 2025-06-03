@@ -18,20 +18,18 @@ st.markdown("""
 > 🔒 Nenhuma conversa é salva. Ao fechar esta aba, tudo é apagado.
 """)
 
-# ESTADOS INICIAIS
+# ESTADO INICIAL
 if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
 if "input_processed" not in st.session_state:
     st.session_state["input_processed"] = False
-if "texto_temp" not in st.session_state:
-    st.session_state["texto_temp"] = ""
 
-# BOTÃO NOVA CONVERSA
+# BOTÃO PARA NOVA CONVERSA
 if st.button("🧹 Nova conversa"):
     st.session_state["chat_history"] = []
     st.experimental_rerun()
 
-# MICROFONE NO NAVEGADOR (HTML/JS)
+# GRAVAÇÃO NO NAVEGADOR (opcional)
 with st.expander("🎤 Gravar direto do navegador (opcional)"):
     components.html(
         """
@@ -110,7 +108,7 @@ if audio_file:
         st.session_state["chat_history"].append({"role": "assistant", "content": resposta_texto})
 
 # ENTRADA DE TEXTO
-user_input = st.text_input("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", key="texto_temp")
+user_input = st.text_input("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", key="entrada_temp")
 
 if user_input and not st.session_state["input_processed"]:
     st.session_state["chat_history"].append({"role": "user", "content": user_input})
@@ -130,7 +128,7 @@ if user_input and not st.session_state["input_processed"]:
     resposta = response.choices[0].message.content.strip()
     st.session_state["chat_history"].append({"role": "assistant", "content": resposta})
 
-    st.session_state["texto_temp"] = ""  # limpeza segura
+    # Não limpa manualmente; o experimental_rerun reinicia com campo vazio
     st.session_state["input_processed"] = True
     st.experimental_rerun()
 else:
