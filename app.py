@@ -21,6 +21,8 @@ st.markdown("""
 # ESTADO INICIAL
 if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
+if "entrada_temp" not in st.session_state:
+    st.session_state["entrada_temp"] = ""
 
 # BOTÃO PARA NOVA CONVERSA
 if st.button("🧹 Nova conversa"):
@@ -105,7 +107,7 @@ if audio_file:
         resposta_texto = resposta.choices[0].message.content.strip()
         st.session_state["chat_history"].append({"role": "assistant", "content": resposta_texto})
 
-# ENTRADA DE TEXTO VIA FORM
+# FORMULÁRIO DE ENTRADA DE TEXTO
 with st.form("formulario_davar"):
     user_input = st.text_input("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", key="entrada_temp")
     enviar = st.form_submit_button("Enviar")
@@ -128,9 +130,14 @@ if enviar and user_input:
     resposta = response.choices[0].message.content.strip()
     st.session_state["chat_history"].append({"role": "assistant", "content": resposta})
 
+    # ✅ limpeza do campo após envio
+    st.session_state["entrada_temp"] = ""
+
 # HISTÓRICO EM ORDEM DECRESCENTE
 for mensagem in reversed(st.session_state["chat_history"]):
     if mensagem["role"] == "user":
         st.markdown(f"**Você:** {mensagem['content']}")
     elif mensagem["role"] == "assistant":
         st.markdown(f"**Davar:** {mensagem['content']}")
+
+        
