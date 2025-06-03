@@ -20,15 +20,15 @@ st.markdown("""
 
 # ESTADOS INICIAIS
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+    st.session_state["chat_history"] = []
 if "user_input" not in st.session_state:
     st.session_state["user_input"] = ""
 if "input_processed" not in st.session_state:
-    st.session_state.input_processed = False
+    st.session_state["input_processed"] = False
 
 # BOTÃO NOVA CONVERSA
 if st.button("🧹 Nova conversa"):
-    st.session_state.chat_history = []
+    st.session_state["chat_history"] = []
     st.experimental_rerun()
 
 # MICROFONE NO NAVEGADOR (HTML/JS)
@@ -90,11 +90,11 @@ if audio_file:
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
             file=audio_buffer,
-            language="pt"  # ✅ Força transcrição em português
+            language="pt"  # força idioma português
         )
         user_input = transcript.text
         st.markdown(f"**Você disse (transcrito):** {user_input}")
-        st.session_state.chat_history.append({"role": "user", "content": user_input})
+        st.session_state["chat_history"].append({"role": "user", "content": user_input})
 
         resposta = client.chat.completions.create(
             model="gpt-4o",
@@ -105,18 +105,18 @@ if audio_file:
                  "Você pode fazer pequenas pausas poéticas ou reflexivas, se for apropriado. "
                  "Evite parecer um robô ou um terapeuta técnico. "
                  "Seu papel é escutar, refletir e estar junto com palavras que tocam e inspiram."}
-            ] + st.session_state.chat_history,
+            ] + st.session_state["chat_history"],
             temperature=0.7
         )
         resposta_texto = resposta.choices[0].message.content.strip()
-        st.session_state.chat_history.append({"role": "assistant", "content": resposta_texto})
+        st.session_state["chat_history"].append({"role": "assistant", "content": resposta_texto})
 
 # ENTRADA DE TEXTO
 user_input = st.text_input("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", key="user_input")
 
-# PROCESSAMENTO DO TEXTO COM LIMPEZA SEGURA
-if user_input and not st.session_state.input_processed:
-    st.session_state.chat_history.append({"role": "user", "content": user_input})
+# PROCESSAMENTO DO TEXTO
+if user_input and not st.session_state["input_processed"]:
+    st.session_state["chat_history"].append({"role": "user", "content": user_input})
 
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -127,20 +127,20 @@ if user_input and not st.session_state.input_processed:
              "Você pode fazer pequenas pausas poéticas ou reflexivas, se for apropriado. "
              "Evite parecer um robô ou um terapeuta técnico. "
              "Seu papel é escutar, refletir e estar junto com palavras que tocam e inspiram."}
-        ] + st.session_state.chat_history,
+        ] + st.session_state["chat_history"],
         temperature=0.7
     )
     resposta = response.choices[0].message.content.strip()
-    st.session_state.chat_history.append({"role": "assistant", "content": resposta})
+    st.session_state["chat_history"].append({"role": "assistant", "content": resposta})
 
-    st.session_state["user_input"] = ""  # ✅ limpa o campo de forma segura
-    st.session_state.input_processed = True
+    st.session_state["user_input"] = ""
+    st.session_state["input_processed"] = True
     st.experimental_rerun()
 else:
-    st.session_state.input_processed = False
+    st.session_state["input_processed"] = False
 
 # HISTÓRICO EM ORDEM DECRESCENTE
-for mensagem in reversed(st.session_state.chat_history):
+for mensagem in reversed(st.session_state["chat_history"]):
     if mensagem["role"] == "user":
         st.markdown(f"**Você:** {mensagem['content']}")
     elif mensagem["role"] == "assistant":
