@@ -155,7 +155,7 @@ if audio_file:
 
 # FORMULÁRIO DE ENTRADA DE TEXTO
 with st.form("formulario_davar", clear_on_submit=True):
-    user_input = st.text_input("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:")
+    user_input = st.text_area("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", height=200)
     enviar = st.form_submit_button("Enviar")
 
 if enviar and user_input:
