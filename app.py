@@ -1,4 +1,11 @@
 import streamlit as st
+
+# Carregar a imagem
+image = Davar_imagem_top de tela_04_06_2025.png("imagem_davar.png")  # certifique-se que o nome do arquivo corresponda
+
+# Exibir imagem no topo da aplicação
+st.image(image, use_column_width=True)
+
 from openai import OpenAI
 import os
 import io
