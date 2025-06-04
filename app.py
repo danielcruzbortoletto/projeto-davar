@@ -1,5 +1,33 @@
 import streamlit as st
 
+# Estilo CSS com animação para a imagem do topo (sem sticky)
+st.markdown("""
+    <style>
+        .top-image {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+            max-width: 900px;
+            border-radius: 16px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1.2s ease-in-out;
+            margin-bottom: 24px;
+        }
+
+        @keyframes fadeIn {
+            0%   { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Exibir imagem no topo com animação
+st.markdown(
+    '<img src="topo.png" class="top-image">',
+    unsafe_allow_html=True
+)
+
 from openai import OpenAI
 import os
 import io
