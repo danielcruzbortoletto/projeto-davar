@@ -1,34 +1,34 @@
 import streamlit as st
 
-# ⚠️ Esta linha deve ser o primeiro comando do Streamlit
+# Deve ser a primeira chamada do Streamlit
 st.set_page_config(page_title="Projeto Davar", layout="centered")
 
-# Depois, todo o resto do código:
+# Estilo CSS para animação e sombra da imagem
 st.markdown("""
     <style>
-        .top-image {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            width: 100%;
-            max-width: 900px;
+        .image-container {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .image-container img {
             border-radius: 16px;
             box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
             animation: fadeIn 1.2s ease-in-out;
-            margin-bottom: 24px;
+            max-width: 900px;
+            width: 100%;
         }
-
         @keyframes fadeIn {
-            0%   { opacity: 0; transform: translateY(-20px); }
+            0% { opacity: 0; transform: translateY(-20px); }
             100% { opacity: 1; transform: translateY(0); }
         }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown(
-    '<img src="topo.png" class="top-image">',
-    unsafe_allow_html=True
-)
+# Exibir imagem com animação e estilo
+st.markdown('<div class="image-container">', unsafe_allow_html=True)
+st.image("topo.png", use_column_width=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 from openai import OpenAI
