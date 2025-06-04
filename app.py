@@ -38,7 +38,6 @@ import streamlit.components.v1 as components
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-st.set_page_config(page_title="Projeto Davar", layout="centered")
 st.title("🤖 Davar – escuta com presença")
 
 # MANIFESTO
