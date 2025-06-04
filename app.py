@@ -1,9 +1,9 @@
 import streamlit as st
 
-# Esta linha deve ser a primeira chamada do Streamlit!
+# ⚠️ Esta linha deve ser o primeiro comando do Streamlit
 st.set_page_config(page_title="Projeto Davar", layout="centered")
 
-# Estilo CSS com animação (sem sticky)
+# Depois, todo o resto do código:
 st.markdown("""
     <style>
         .top-image {
@@ -25,11 +25,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Exibir imagem com estilo
 st.markdown(
     '<img src="topo.png" class="top-image">',
     unsafe_allow_html=True
 )
+
 
 from openai import OpenAI
 import os
