@@ -1,6 +1,9 @@
 import streamlit as st
 
-# Estilo CSS com animação para a imagem do topo (sem sticky)
+# Esta linha deve ser a primeira chamada do Streamlit!
+st.set_page_config(page_title="Projeto Davar", layout="centered")
+
+# Estilo CSS com animação (sem sticky)
 st.markdown("""
     <style>
         .top-image {
@@ -22,7 +25,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Exibir imagem no topo com animação
+# Exibir imagem com estilo
 st.markdown(
     '<img src="topo.png" class="top-image">',
     unsafe_allow_html=True
