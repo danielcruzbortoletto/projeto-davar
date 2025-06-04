@@ -1,9 +1,32 @@
 import streamlit as st
+from openai import OpenAI
+import os
+import io
+import streamlit.components.v1 as components
 
-# Deve ser a primeira chamada do Streamlit
+# CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Projeto Davar", layout="centered")
 
-# Estilo CSS para animação e sombra da imagem
+# SIDEBAR COM ORIENTAÇÕES
+with st.sidebar:
+    st.header("💬 Sobre o Davar")
+    st.markdown("""
+    O **Davar** é um espaço de escuta com presença.
+
+    Aqui, você pode escrever ou falar livremente — sem julgamentos, sem pressa.
+
+    **Como usar:**
+    - Grave ou escreva sua pergunta, desabafo ou reflexão.
+    - O Davar responde com empatia e sensibilidade.
+    - Nenhuma conversa é salva. Tudo é apagado ao sair.
+
+    ---
+    💡 *Projeto sem fins lucrativos, feito com propósito e cuidado.*
+
+    📩 **Contato:** [contato@projetodavar.com](mailto:contato@projetodavar.com)
+    """)
+
+# ESTILO VISUAL DA IMAGEM DO TOPO
 st.markdown("""
     <style>
         .image-container {
@@ -24,18 +47,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Exibir imagem com animação e estilo
+# IMAGEM DO TOPO
 st.markdown('<div class="image-container">', unsafe_allow_html=True)
 st.image("topo.png", use_container_width=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-
-
-from openai import OpenAI
-import os
-import io
-import streamlit.components.v1 as components
-
+# CLIENTE OPENAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 st.title("🤖 Davar – escuta com presença")
@@ -159,9 +176,19 @@ if enviar and user_input:
     resposta = response.choices[0].message.content.strip()
     st.session_state["chat_history"].append({"role": "assistant", "content": resposta})
 
-# HISTÓRICO EM ORDEM DECRESCENTE
+# HISTÓRICO DE CONVERSA
 for mensagem in reversed(st.session_state["chat_history"]):
     if mensagem["role"] == "user":
         st.markdown(f"**Você:** {mensagem['content']}")
     elif mensagem["role"] == "assistant":
         st.markdown(f"**Davar:** {mensagem['content']}")
+
+# RODAPÉ DISCRETO
+st.markdown("""
+<hr style="margin-top: 3rem; margin-bottom: 1rem;">
+
+<div style="text-align: center; font-size: 0.9rem; color: gray;">
+    Davar é um projeto independente, feito com escuta, ética e cuidado.<br>
+    📩 <a href="mailto:contato@projetodavar.com">contato@projetodavar.com</a>
+</div>
+""", unsafe_allow_html=True)
