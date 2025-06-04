@@ -26,7 +26,7 @@ st.markdown("""
 
 # Exibir imagem com animação e estilo
 st.markdown('<div class="image-container">', unsafe_allow_html=True)
-st.image("topo.png", use_column_width=True)
+st.image("topo.png", use_container_width=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 
