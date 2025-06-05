@@ -75,14 +75,17 @@ if st.button("🧹 Nova conversa"):
     st.session_state["chat_history"] = []
     st.experimental_rerun()
 
-# GRAVAÇÃO NO NAVEGADOR
+# GRAVAÇÃO E ENVIO SIMPLIFICADO
 with st.expander("🎤 Gravar direto do navegador (opcional)"):
+    st.markdown("""
+    <p><strong>1. Clique em "Gravar" e fale.</strong></p>
+    <p><strong>2. Depois clique em "Parar". O áudio será enviado automaticamente.</strong></p>
+    """, unsafe_allow_html=True)
+
     components.html(
         """
         <html>
         <body>
-            <p><strong>1. Clique em "Gravar" e fale.</strong></p>
-            <p><strong>2. Depois clique em "Parar" e baixe o áudio para enviar abaixo.</strong></p>
             <button onclick="startRecording()">🎙️ Gravar</button>
             <button onclick="stopRecording()">⏹️ Parar</button>
             <p id="status">Pronto para gravar...</p>
@@ -106,12 +109,15 @@ with st.expander("🎤 Gravar direto do navegador (opcional)"):
                     mediaRecorder.stop();
                     mediaRecorder.addEventListener("stop", () => {
                         const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                        const audioUrl = URL.createObjectURL(audioBlob);
-                        const a = document.createElement('a');
-                        a.href = audioUrl;
-                        a.download = 'gravacao_davar.wav';
-                        a.click();
-                        document.getElementById("status").innerText = "✅ Áudio salvo! Faça o upload abaixo.";
+                        const formData = new FormData();
+                        formData.append('file', audioBlob, 'gravacao_davar.wav');
+                        fetch('/upload-audio', { method: 'POST', body: formData })
+                            .then(() => {
+                                document.getElementById("status").innerText = "✅ Áudio enviado com sucesso! Aguarde a resposta.";
+                            })
+                            .catch(() => {
+                                document.getElementById("status").innerText = "❌ Falha ao enviar áudio.";
+                            });
                     });
                 }
             </script>
@@ -186,9 +192,9 @@ for mensagem in reversed(st.session_state["chat_history"]):
 # RODAPÉ DISCRETO
 st.markdown("""
 <hr style="margin-top: 3rem; margin-bottom: 1rem;">
-
 <div style="text-align: center; font-size: 0.9rem; color: gray;">
     Davar é um projeto independente, feito com escuta, ética e cuidado.<br>
     📩 <a href="mailto:contato@projetodavar.com">contato@projetodavar.com</a>
 </div>
 """, unsafe_allow_html=True)
+
