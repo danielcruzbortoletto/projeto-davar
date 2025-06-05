@@ -1,15 +1,11 @@
-import os
 import streamlit as st
 from openai import OpenAI
-from dotenv import load_dotenv
-import tempfile
-import soundfile as sf
+import os
+import io
+import streamlit.components.v1 as components
 
 # CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Projeto Davar", layout="centered")
-
-# CARREGAR VARIÁVEIS DE AMBIENTE
-load_dotenv()
 
 # SIDEBAR COM ORIENTAÇÕES
 with st.sidebar:
@@ -17,10 +13,10 @@ with st.sidebar:
     st.markdown("""
     O **Davar** é um espaço de escuta com presença.
 
-    Aqui, você pode escrever ou enviar um áudio — sem julgamentos, sem pressa.
+    Aqui, você pode escrever ou falar livremente — sem julgamentos, sem pressa.
 
     **Como usar:**
-    - Escreva ou envie sua pergunta, desabafo ou reflexão.
+    - Grave ou escreva sua pergunta, desabafo ou reflexão.
     - O Davar responde com empatia e sensibilidade.
     - Nenhuma conversa é salva. Tudo é apagado ao sair.
 
@@ -30,62 +26,169 @@ with st.sidebar:
     📩 **Contato:** [contato@projetodavar.com](mailto:contato@projetodavar.com)
     """)
 
-# TÍTULO E IMAGEM DE TOPO
-st.markdown("<h1 style='text-align: center;'>Projeto Davar</h1>", unsafe_allow_html=True)
+# ESTILO VISUAL DA IMAGEM DO TOPO
+st.markdown("""
+    <style>
+        .image-container {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .image-container img {
+            border-radius: 16px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1.2s ease-in-out;
+            max-width: 900px;
+            width: 100%;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-imagem_path = os.path.join(os.path.dirname(__file__), "topo.png")
-if os.path.exists(imagem_path):
-    st.image(imagem_path)
+# IMAGEM DO TOPO
+st.markdown('<div class="image-container">', unsafe_allow_html=True)
+st.image("topo.png", use_container_width=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-# OPÇÃO DE TEXTO
-mensagem_usuario = st.text_area("Escreva aqui sua pergunta ou desabafo:")
+# CLIENTE OPENAI
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# OPÇÃO DE ÁUDIO
-audio_file = st.file_uploader("Ou envie um áudio (formato .wav ou .mp3)", type=["wav", "mp3"])
+st.title("🤖 Davar – escuta com presença")
 
-# BOTÃO DE ENVIO
-if st.button("Enviar"):
-    if mensagem_usuario.strip():
-        prompt = mensagem_usuario.strip()
-    elif audio_file:
-        with tempfile.NamedTemporaryFile(delete=False) as temp_audio:
-            temp_audio.write(audio_file.read())
-            temp_audio_path = temp_audio.name
+# MANIFESTO
+st.markdown("""
+> **🌱 Bem-vindo ao Davar**  
+> Aqui, você encontra uma escuta com presença, sem julgamentos.  
+> Um espaço para respirar, pensar, sentir e recomeçar.
 
-        try:
-            client = OpenAI()
-            transcription = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=open(temp_audio_path, "rb")
-            )
-            prompt = transcription.text
-            st.success("Áudio transcrito com sucesso.")
-            st.markdown(f"**Transcrição:** {prompt}")
-        except Exception as e:
-            st.error("Erro ao transcrever áudio: " + str(e))
-            prompt = None
-    else:
-        st.warning("Por favor, escreva ou envie um áudio.")
-        prompt = None
+> 🔒 Nenhuma conversa é salva. Ao fechar esta aba, tudo é apagado.
+""")
 
-    if prompt:
-        try:
-            client = OpenAI()
-            resposta = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "Você é uma presença acolhedora e sensível."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            st.markdown("### ✨ Resposta do Davar:")
-            st.markdown(resposta.choices[0].message.content)
-        except Exception as e:
-            st.error("Erro ao gerar resposta: " + str(e))
+# ESTADO INICIAL
+if "chat_history" not in st.session_state:
+    st.session_state["chat_history"] = []
 
-# RODAPÉ
-st.markdown("---")
-st.markdown("<p style='text-align: center; font-size: small;'>💡 Projeto sem fins lucrativos, feito com propósito e cuidado.</p>", unsafe_allow_html=True)
+# BOTÃO PARA NOVA CONVERSA
+if st.button("🧹 Nova conversa"):
+    st.session_state["chat_history"] = []
+    st.experimental_rerun()
 
+# GRAVAÇÃO NO NAVEGADOR
+with st.expander("🎤 Gravar direto do navegador (opcional)"):
+    components.html(
+        """
+        <html>
+        <body>
+            <p><strong>1. Clique em "Gravar" e fale.</strong></p>
+            <p><strong>2. Depois clique em "Parar" e baixe o áudio para enviar abaixo.</strong></p>
+            <button onclick="startRecording()">🎙️ Gravar</button>
+            <button onclick="stopRecording()">⏹️ Parar</button>
+            <p id="status">Pronto para gravar...</p>
+            <script>
+                let mediaRecorder;
+                let audioChunks = [];
 
+                function startRecording() {
+                    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        mediaRecorder.start();
+                        audioChunks = [];
+                        mediaRecorder.addEventListener("dataavailable", event => {
+                            audioChunks.push(event.data);
+                        });
+                        document.getElementById("status").innerText = "🎙️ Gravando...";
+                    });
+                }
 
+                function stopRecording() {
+                    mediaRecorder.stop();
+                    mediaRecorder.addEventListener("stop", () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const a = document.createElement('a');
+                        a.href = audioUrl;
+                        a.download = 'gravacao_davar.wav';
+                        a.click();
+                        document.getElementById("status").innerText = "✅ Áudio salvo! Faça o upload abaixo.";
+                    });
+                }
+            </script>
+        </body>
+        </html>
+        """,
+        height=300
+    )
+
+# UPLOAD DE ÁUDIO
+audio_file = st.file_uploader("📁 Envie seu áudio (MP3, WAV, M4A):", type=["mp3", "wav", "m4a"])
+if audio_file:
+    with st.spinner("🎧 Transcrevendo áudio..."):
+        audio_bytes = audio_file.read()
+        audio_buffer = io.BytesIO(audio_bytes)
+        audio_buffer.name = audio_file.name
+
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_buffer,
+            language="pt"
+        )
+        user_input = transcript.text
+        st.markdown(f"**Você disse (transcrito):** {user_input}")
+        st.session_state["chat_history"].append({"role": "user", "content": user_input})
+
+        resposta = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "Você é o Davar, uma presença de escuta e cuidado. "
+                 "Responda com empatia, sem pressa, valorizando o que é dito e acolhendo a pessoa como ela é. "
+                 "Use uma linguagem próxima, com humanidade e sensibilidade. "
+                 "Você pode fazer pequenas pausas poéticas ou reflexivas, se for apropriado. "
+                 "Evite parecer um robô ou um terapeuta técnico. "
+                 "Seu papel é escutar, refletir e estar junto com palavras que tocam e inspiram."}
+            ] + st.session_state["chat_history"],
+            temperature=0.7
+        )
+        resposta_texto = resposta.choices[0].message.content.strip()
+        st.session_state["chat_history"].append({"role": "assistant", "content": resposta_texto})
+
+# FORMULÁRIO DE ENTRADA DE TEXTO
+with st.form("formulario_davar", clear_on_submit=True):
+    user_input = st.text_area("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", height=200)
+    enviar = st.form_submit_button("Enviar")
+
+if enviar and user_input:
+    st.session_state["chat_history"].append({"role": "user", "content": user_input})
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "Você é o Davar, uma presença de escuta e cuidado. "
+             "Responda com empatia, sem pressa, valorizando o que é dito e acolhendo a pessoa como ela é. "
+             "Use uma linguagem próxima, com humanidade e sensibilidade. "
+             "Você pode fazer pequenas pausas poéticas ou reflexivas, se for apropriado. "
+             "Evite parecer um robô ou um terapeuta técnico. "
+             "Seu papel é escutar, refletir e estar junto com palavras que tocam e inspiram."}
+        ] + st.session_state["chat_history"],
+        temperature=0.7
+    )
+    resposta = response.choices[0].message.content.strip()
+    st.session_state["chat_history"].append({"role": "assistant", "content": resposta})
+
+# HISTÓRICO DE CONVERSA
+for mensagem in reversed(st.session_state["chat_history"]):
+    if mensagem["role"] == "user":
+        st.markdown(f"**Você:** {mensagem['content']}")
+    elif mensagem["role"] == "assistant":
+        st.markdown(f"**Davar:** {mensagem['content']}")
+
+# RODAPÉ DISCRETO
+st.markdown("""
+<hr style="margin-top: 3rem; margin-bottom: 1rem;">
+
+<div style="text-align: center; font-size: 0.9rem; color: gray;">
+    Davar é um projeto independente, feito com escuta, ética e cuidado.<br>
+    📩 <a href="mailto:contato@projetodavar.com">contato@projetodavar.com</a>
+</div>
+""", unsafe_allow_html=True)
