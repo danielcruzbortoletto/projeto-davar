@@ -31,7 +31,7 @@ with st.sidebar:
     📩 **Contato:** [contato@projetodavar.com](mailto:contato@projetodavar.com)
     """)
 
-st.image("Davar_imagem_top_de_tela_04_06_2025.png")
+st.image(topo.png")
 
 st.markdown("""<style>footer {visibility: visible;} footer:after {content:'💜 Davar é um projeto de escuta com propósito e presença. Nenhum dado é salvo.'; display: block; text-align: center; padding: 10px;} </style>""", unsafe_allow_html=True)
 
