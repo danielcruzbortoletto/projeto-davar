@@ -1,17 +1,16 @@
 import streamlit as st
+import soundfile as sf
+import tempfile
 import os
-import io
 from openai import OpenAI
 from dotenv import load_dotenv
-from pydub import AudioSegment
-import base64
-
-# CARREGAR VARIÁVEIS DE AMBIENTE
-load_dotenv()
-openai_api_key = os.getenv("OPENAI_API_KEY")
 
 # CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Projeto Davar", layout="centered")
+
+# CARREGAR VARIÁVEIS DE AMBIENTE
+load_dotenv()
+client = OpenAI()
 
 # SIDEBAR COM ORIENTAÇÕES
 with st.sidebar:
@@ -19,13 +18,12 @@ with st.sidebar:
     st.markdown("""
     O **Davar** é um espaço de escuta com presença.
 
-    Aqui, você pode escrever ou gravar sua pergunta, desabafo ou reflexão.
+    Aqui, você pode escrever ou gravar livremente — sem julgamentos, sem pressa.
 
     **Como usar:**
-    - Envie um áudio em `.mp3`, `.wav` ou `.m4a`, ou escreva sua mensagem.
+    - Grave ou escreva sua pergunta, desabafo ou reflexão.
     - O Davar responde com empatia e sensibilidade.
-
-    🔒 Nenhuma conversa é salva. Tudo é apagado ao sair.
+    - Nenhuma conversa é salva. Tudo é apagado ao sair.
 
     ---
     💡 *Projeto sem fins lucrativos, feito com propósito e cuidado.*
@@ -33,68 +31,57 @@ with st.sidebar:
     📩 **Contato:** [contato@projetodavar.com](mailto:contato@projetodavar.com)
     """)
 
-# IMAGEM NO TOPO
-st.image("Davar_imagem_top_de_tela_04_06_2025.png", use_column_width=True)
+st.image("Davar_imagem_top_de_tela_04_06_2025.png")
 
-# INTERFACE PRINCIPAL
-st.title("👂 Davar — Escuta com Presença")
-st.markdown("Envie um áudio ou escreva abaixo.")
+st.markdown("""<style>footer {visibility: visible;} footer:after {content:'💜 Davar é um projeto de escuta com propósito e presença. Nenhum dado é salvo.'; display: block; text-align: center; padding: 10px;} </style>""", unsafe_allow_html=True)
 
-# CLIENTE OPENAI
-client = OpenAI(api_key=openai_api_key)
+st.title("🧠 Projeto Davar")
+st.markdown("Envie uma reflexão ou pergunta. Pode ser por texto ou por áudio.")
 
-# PROCESSAMENTO DE ÁUDIO
-texto_transcrito = ""
-arquivo_audio = st.file_uploader("Envie seu áudio", type=["mp3", "wav", "m4a"])
+# INPUT DE TEXTO
+text_input = st.text_area("Digite aqui (opcional):")
 
-if arquivo_audio is not None:
-    st.audio(arquivo_audio)
+# INPUT DE ÁUDIO
+uploaded_file = st.file_uploader("Ou envie um áudio em .wav", type=["wav"])
+
+user_input = text_input.strip()
+
+if uploaded_file is not None:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
+        tmpfile.write(uploaded_file.read())
+        tmpfile_path = tmpfile.name
+
+    # TRANSCRIÇÃO COM WHISPER
     with st.spinner("Transcrevendo áudio..."):
         try:
-            bytes_audio = arquivo_audio.read()
-            audio_file = io.BytesIO(bytes_audio)
             transcript = client.audio.transcriptions.create(
                 model="whisper-1",
-                file=audio_file,
-                response_format="text"
+                file=open(tmpfile_path, "rb")
             )
-            texto_transcrito = transcript
+            user_input = transcript.text
             st.success("Transcrição concluída:")
-            st.markdown(f"**Você disse:** {texto_transcrito}")
+            st.write(user_input)
         except Exception as e:
-            st.error(f"Erro na transcrição: {e}")
+            st.error("Erro ao transcrever o áudio.")
+            st.stop()
 
-# ENTRADA DE TEXTO MANUAL
-texto_manual = st.text_area("Ou escreva aqui sua pergunta ou reflexão:")
+if user_input:
+    with st.spinner("Gerando resposta do Davar..."):
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "Você é o Davar, um espaço de escuta com presença. Responda com empatia, leveza e profundidade, mesmo a perguntas difíceis."},
+                    {"role": "user", "content": user_input}
+                ]
+            )
+            output = response.choices[0].message.content
+            st.markdown("### 🧾 Resposta do Davar:")
+            st.write(output)
+        except Exception as e:
+            st.error("Erro ao gerar resposta:")
+            st.error(str(e))
+else:
+    st.info("Envie uma pergunta, reflexão ou desabafo.")
 
-# ESCOLHA DE TEXTO FINAL
-texto_final = texto_transcrito if texto_transcrito else texto_manual
-
-if texto_final:
-    if st.button("Enviar para o Davar"):
-        with st.spinner("Gerando resposta..."):
-            try:
-                resposta = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[
-                        {"role": "system", "content": "Você é o Davar, um espaço de escuta com presença. Responda com empatia, sem julgamento e com profundidade."},
-                        {"role": "user", "content": texto_final}
-                    ]
-                )
-                resposta_gerada = resposta.choices[0].message.content
-                st.markdown("---")
-                st.subheader("Resposta do Davar")
-                st.markdown(resposta_gerada)
-            except Exception as e:
-                st.error(f"Erro ao gerar resposta: {e}")
-
-# RODAPÉ
-st.markdown("""
----
-<center>
-📌 Nenhuma informação é armazenada. <br> 
-🕊️ Este é um projeto de escuta ativa e gratuita. <br>
-🌱 Feito com alma, tecnologia e propósito.
-</center>
-""", unsafe_allow_html=True)
 
