@@ -1,7 +1,5 @@
-import streamlit as st
-import soundfile as sf
-import tempfile
 import os
+import streamlit as st
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -10,78 +8,43 @@ st.set_page_config(page_title="Projeto Davar", layout="centered")
 
 # CARREGAR VARIÁVEIS DE AMBIENTE
 load_dotenv()
-client = OpenAI()
 
-# SIDEBAR COM ORIENTAÇÕES
-with st.sidebar:
-    st.header("💬 Sobre o Davar")
-    st.markdown("""
-    O **Davar** é um espaço de escuta com presença.
+# INTERFACE
+st.markdown("<h1 style='text-align: center;'>Projeto Davar</h1>", unsafe_allow_html=True)
 
-    Aqui, você pode escrever ou gravar livremente — sem julgamentos, sem pressa.
+# Exibir imagem de topo
+imagem_path = os.path.join(os.path.dirname(__file__), "topo.png")
+if os.path.exists(imagem_path):
+    st.image(imagem_path)
+else:
+    st.warning("Imagem de topo não encontrada.")
 
-    **Como usar:**
-    - Grave ou escreva sua pergunta, desabafo ou reflexão.
-    - O Davar responde com empatia e sensibilidade.
-    - Nenhuma conversa é salva. Tudo é apagado ao sair.
+# CAMPO DE TEXTO
+mensagem_usuario = st.text_area("Escreva aqui sua pergunta ou desabafo:")
 
-    ---
-    💡 *Projeto sem fins lucrativos, feito com propósito e cuidado.*
-
-    📩 **Contato:** [contato@projetodavar.com](mailto:contato@projetodavar.com)
-    """)
-
-st.image(topo.png")
-
-st.markdown("""<style>footer {visibility: visible;} footer:after {content:'💜 Davar é um projeto de escuta com propósito e presença. Nenhum dado é salvo.'; display: block; text-align: center; padding: 10px;} </style>""", unsafe_allow_html=True)
-
-st.title("🧠 Projeto Davar")
-st.markdown("Envie uma reflexão ou pergunta. Pode ser por texto ou por áudio.")
-
-# INPUT DE TEXTO
-text_input = st.text_area("Digite aqui (opcional):")
-
-# INPUT DE ÁUDIO
-uploaded_file = st.file_uploader("Ou envie um áudio em .wav", type=["wav"])
-
-user_input = text_input.strip()
-
-if uploaded_file is not None:
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
-        tmpfile.write(uploaded_file.read())
-        tmpfile_path = tmpfile.name
-
-    # TRANSCRIÇÃO COM WHISPER
-    with st.spinner("Transcrevendo áudio..."):
+# BOTÃO ENVIAR
+if st.button("Enviar"):
+    if mensagem_usuario.strip():
+        st.markdown("🔄 Gerando resposta, por favor aguarde...")
         try:
-            transcript = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=open(tmpfile_path, "rb")
-            )
-            user_input = transcript.text
-            st.success("Transcrição concluída:")
-            st.write(user_input)
-        except Exception as e:
-            st.error("Erro ao transcrever o áudio.")
-            st.stop()
-
-if user_input:
-    with st.spinner("Gerando resposta do Davar..."):
-        try:
-            response = client.chat.completions.create(
+            client = OpenAI()
+            resposta = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    {"role": "system", "content": "Você é o Davar, um espaço de escuta com presença. Responda com empatia, leveza e profundidade, mesmo a perguntas difíceis."},
-                    {"role": "user", "content": user_input}
+                    {"role": "system", "content": "Você é uma presença acolhedora e sensível."},
+                    {"role": "user", "content": mensagem_usuario}
                 ]
             )
-            output = response.choices[0].message.content
-            st.markdown("### 🧾 Resposta do Davar:")
-            st.write(output)
+            st.markdown("### ✨ Resposta do Davar:")
+            st.markdown(resposta.choices[0].message.content)
         except Exception as e:
-            st.error("Erro ao gerar resposta:")
-            st.error(str(e))
-else:
-    st.info("Envie uma pergunta, reflexão ou desabafo.")
+            st.error("Erro ao gerar resposta: " + str(e))
+    else:
+        st.warning("Por favor, escreva algo antes de enviar.")
+
+# RODAPÉ
+st.markdown("---")
+st.markdown("<p style='text-align: center; font-size: small;'>💡 Projeto sem fins lucrativos, feito com propósito e cuidado.</p>", unsafe_allow_html=True)
+
 
 
