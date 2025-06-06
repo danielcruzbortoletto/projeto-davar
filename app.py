@@ -48,7 +48,7 @@ ctx = webrtc_streamer(
     mode=WebRtcMode.SENDONLY,
     audio_receiver_size=256,
     audio_processor_factory=AudioRecorder,
-    async_processing=false,
+    async_processing=False,
 )
 
 if ctx and ctx.audio_processor:
