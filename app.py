@@ -73,7 +73,7 @@ if "chat_history" not in st.session_state:
 # BOTÃO PARA NOVA CONVERSA
 if st.button("🧹 Nova conversa"):
     st.session_state["chat_history"] = []
-    st.experimental_rerun()
+    st.rerun()  # Atualizado para evitar erro
 
 # GRAVAÇÃO NO NAVEGADOR (LEVE)
 with st.expander("🎤 Gravar direto do navegador (opcional)"):
@@ -159,21 +159,37 @@ with st.form("formulario_davar", clear_on_submit=True):
     enviar = st.form_submit_button("Enviar")
 
 if enviar and user_input:
-    st.session_state["chat_history"].append({"role": "user", "content": user_input})
+    mensagem = user_input.lower()
 
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "Você é o Davar, uma presença de escuta e cuidado. "
-             "Responda com empatia, sem pressa, valorizando o que é dito e acolhendo a pessoa como ela é. "
-             "Use uma linguagem próxima, com humanidade e sensibilidade. "
-             "Você pode fazer pequenas pausas poéticas ou reflexivas, se for apropriado. "
-             "Evite parecer um robô ou um terapeuta técnico. "
-             "Seu papel é escutar, refletir e estar junto com palavras que tocam e inspiram."}
-        ] + st.session_state["chat_history"],
-        temperature=0.7
-    )
-    resposta = response.choices[0].message.content.strip()
+    # Respostas fixas personalizadas
+    if any(p in mensagem for p in ["quem te criou", "quem criou você", "quem é seu criador", "quem fez o davar"]):
+        resposta = (
+            "Fui criado por **Daniel da Cruz Bortoletto**, um especialista conector apaixonado por escuta, ética e tecnologia com propósito. "
+            "O Davar nasceu do desejo de oferecer um espaço de presença e acolhimento, usando inteligência artificial para apoiar as pessoas de forma humana."
+        )
+
+    elif any(p in mensagem for p in ["onde posso saber mais", "qual seu site", "onde encontro mais informações", "tem algum site", "site do davar"]):
+        resposta = (
+            "Você pode saber mais no site oficial: [www.projetodavar.com](https://www.projetodavar.com)  \n"
+            "Lá explico o propósito, como funciona, e as versões especiais como o *Davar Acolhe* e o *Toca Davar*."
+        )
+
+    else:
+        st.session_state["chat_history"].append({"role": "user", "content": user_input})
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "Você é o Davar, uma presença de escuta e cuidado. "
+                 "Responda com empatia, sem pressa, valorizando o que é dito e acolhendo a pessoa como ela é. "
+                 "Use uma linguagem próxima, com humanidade e sensibilidade. "
+                 "Você pode fazer pequenas pausas poéticas ou reflexivas, se for apropriado. "
+                 "Evite parecer um robô ou um terapeuta técnico. "
+                 "Seu papel é escutar, refletir e estar junto com palavras que tocam e inspiram."}
+            ] + st.session_state["chat_history"],
+            temperature=0.7
+        )
+        resposta = response.choices[0].message.content.strip()
+
     st.session_state["chat_history"].append({"role": "assistant", "content": resposta})
 
 # HISTÓRICO DE CONVERSA
