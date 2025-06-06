@@ -166,7 +166,7 @@ if enviar and user_input:
         "quem te criou", "quem criou você", "quem fez o davar", "quem é seu criador",
         "quem criou vc", "foi só você", "foi você que criou", "criado por quem",
         "alguém criou você", "criação do davar", "criado por alguém", "daniel da cruz",
-        "daniel criou", "existe um criador", "autor do davar", "quem te fez", "quem te inventou", "quem te idealizou", "quem te programou" , "quem teve a ideia de fazer você"
+        "daniel criou", "existe um criador", "autor do davar", "quem te fez", "quem fez você", "quem te inventou", "quem te idealizou", "quem te programou" , "quem teve a ideia de fazer você"
     ]):
         resposta = (
             "Fui criado por **Daniel da Cruz Bortoletto**, um especialista conector apaixonado por escuta, ética e tecnologia com propósito. "
