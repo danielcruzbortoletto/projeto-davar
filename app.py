@@ -1,4 +1,3 @@
-
 import streamlit as st
 from openai import OpenAI
 import os
@@ -210,3 +209,15 @@ for mensagem in reversed(st.session_state["chat_history"]):
         st.markdown(f"**Você:** {mensagem['content']}")
     elif mensagem["role"] == "assistant":
         st.markdown(f"**Davar:** {mensagem['content']}")
+
+
+st.markdown(
+    '''
+    <div style="text-align: right; margin-top: 30px;">
+        <a href="https://projetodavar.com/disclaimer.html" target="_blank" style="color: #999999; font-size: 0.8em; text-decoration: underline;">
+            Aviso de responsabilidade
+        </a>
+    </div>
+    ''',
+    unsafe_allow_html=True
+)
