@@ -205,4 +205,26 @@ st.markdown(
     ''',
     unsafe_allow_html=True
 )
+import gspread
+from datetime import datetime
+
+# Campo opcional de feedback
+st.markdown("---")
+st.markdown("🗣️ **Quer compartilhar como se sentiu com essa conversa?**")
+st.markdown("*(Opcional. Seu retorno nos ajuda a cuidar ainda melhor deste espaço.)*")
+
+with st.form("form_feedback"):
+    feedback_input = st.text_area("✍️ Escreva aqui (opcional):", height=100)
+    enviar_feedback = st.form_submit_button("Enviar retorno")
+
+if enviar_feedback and feedback_input.strip():
+    try:
+        gc = gspread.service_account_from_dict(st.secrets["gspread"])
+        sh = gc.open("Feedback Davar")
+        worksheet = sh.worksheet("Respostas")
+        worksheet.append_row([str(datetime.now()), feedback_input.strip()])
+        st.success("🙏 Obrigado por compartilhar sua experiência com o Davar.")
+    except Exception as e:
+        st.error("❌ Ocorreu um erro ao registrar seu retorno. Tente novamente mais tarde.")
+        st.stop()
 
