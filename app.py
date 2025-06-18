@@ -2,10 +2,9 @@ import streamlit as st
 from openai import OpenAI
 import os
 import io
-import json
-import gspread
-from datetime import datetime
 import streamlit.components.v1 as components
+
+from datetime import datetime
 
 # CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Projeto Davar", layout="centered")
@@ -201,21 +200,6 @@ for mensagem in reversed(st.session_state["chat_history"]):
     elif mensagem["role"] == "assistant":
         st.markdown(f"**Davar:** {mensagem['content']}")
 
-# FORMULÁRIO DE FEEDBACK
+# RODAPÉ DE FEEDBACK (com link em vez de formulário)
 st.markdown("---")
-st.markdown("🗣️ **Quer compartilhar como se sentiu com essa conversa?**")
-st.markdown("*(Opcional. Seu retorno nos ajuda a cuidar ainda melhor deste espaço.)*")
-
-with st.form("form_feedback"):
-    feedback_input = st.text_area("✍️ Escreva aqui (opcional):", height=100)
-    enviar_feedback = st.form_submit_button("Enviar retorno")
-
-if enviar_feedback and feedback_input.strip():
-    try:
-        gc = gspread.service_account_from_dict(st.secrets["gspread"].to_dict())
-        sh = gc.open("Feedback Davar")
-        worksheet = sh.worksheet("Respostas")
-        worksheet.append_row([str(datetime.now()), feedback_input.strip()])
-        st.success("🙏 Obrigado por compartilhar sua experiência com o Davar.")
-    except Exception as e:
-        st.error(f"❌ Erro técnico ao salvar feedback: {e}")
+st.markdown("🫶 **Gostou da conversa?** [Compartilhe ou deixe um comentário no nosso Instagram → @projetodavar](https://www.instagram.com/projetodavar/)", unsafe_allow_html=True)
