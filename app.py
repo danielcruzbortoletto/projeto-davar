@@ -224,7 +224,8 @@ if enviar_feedback and feedback_input.strip():
         worksheet = sh.worksheet("Respostas")
         worksheet.append_row([str(datetime.now()), feedback_input.strip()])
         st.success("🙏 Obrigado por compartilhar sua experiência com o Davar.")
+
     except Exception as e:
-        st.error("❌ Ocorreu um erro ao registrar seu retorno. Tente novamente mais tarde.")
-        st.stop()
+        st.error(f"❌ Erro técnico ao salvar feedback: {e}")
+
 
