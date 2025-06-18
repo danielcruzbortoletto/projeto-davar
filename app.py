@@ -3,11 +3,10 @@ from openai import OpenAI
 import os
 import io
 import streamlit.components.v1 as components
+from gatilho_escuta_suicidio import gerar_resposta_final
 
-# CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Projeto Davar", layout="centered")
 
-# SIDEBAR COM ORIENTAÇÕES
 with st.sidebar:
     st.header("💬 Sobre o Davar")
     st.markdown("""
@@ -26,7 +25,6 @@ with st.sidebar:
     📩 **Contato:** [contato@projetodavar.com](mailto:contato@projetodavar.com)
     """)
 
-# ESTILO VISUAL DA IMAGEM DO TOPO
 st.markdown("""
     <style>
         .image-container {
@@ -47,17 +45,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# IMAGEM DO TOPO
 st.markdown('<div class="image-container">', unsafe_allow_html=True)
 st.image("topo.png", use_container_width=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# CLIENTE OPENAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 st.title("🤖 Davar – escuta com presença")
 
-# MANIFESTO
 st.markdown("""
 > **🌱 Bem-vindo ao Davar**  
 > Aqui, você encontra uma escuta com presença, sem julgamentos.  
@@ -66,62 +61,52 @@ st.markdown("""
 > 🔒 Nenhuma conversa é salva. Ao fechar esta aba, tudo é apagado.
 """)
 
-# ESTADO INICIAL
 if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
 
-# BOTÃO PARA NOVA CONVERSA
 if st.button("🧹 Nova conversa"):
     st.session_state["chat_history"] = []
     st.rerun()
 
-# GRAVAÇÃO NO NAVEGADOR (OPCIONAL)
 with st.expander("🎤 Gravar direto do navegador (opcional)"):
-    components.html(
-        """
-        <html>
-        <body>
-            <p><strong>1. Clique em "Gravar" e fale.</strong></p>
-            <p><strong>2. Depois clique em "Parar" e baixe o áudio para enviar abaixo.</strong></p>
-            <button onclick="startRecording()">🎙️ Gravar</button>
-            <button onclick="stopRecording()">⏹️ Parar</button>
-            <p id="status">Pronto para gravar...</p>
-            <script>
-                let mediaRecorder;
-                let audioChunks = [];
+    components.html("""
+        <html><body>
+        <p><strong>1. Clique em "Gravar" e fale.</strong></p>
+        <p><strong>2. Depois clique em "Parar" e baixe o áudio para enviar abaixo.</strong></p>
+        <button onclick="startRecording()">🎙️ Gravar</button>
+        <button onclick="stopRecording()">⏹️ Parar</button>
+        <p id="status">Pronto para gravar...</p>
+        <script>
+            let mediaRecorder;
+            let audioChunks = [];
 
-                function startRecording() {
-                    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-                        mediaRecorder = new MediaRecorder(stream);
-                        mediaRecorder.start();
-                        audioChunks = [];
-                        mediaRecorder.addEventListener("dataavailable", event => {
-                            audioChunks.push(event.data);
-                        });
-                        document.getElementById("status").innerText = "🎙️ Gravando...";
+            function startRecording() {
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.start();
+                    audioChunks = [];
+                    mediaRecorder.addEventListener("dataavailable", event => {
+                        audioChunks.push(event.data);
                     });
-                }
+                    document.getElementById("status").innerText = "🎙️ Gravando...";
+                });
+            }
 
-                function stopRecording() {
-                    mediaRecorder.stop();
-                    mediaRecorder.addEventListener("stop", () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                        const audioUrl = URL.createObjectURL(audioBlob);
-                        const a = document.createElement('a');
-                        a.href = audioUrl;
-                        a.download = 'gravacao_davar.wav';
-                        a.click();
-                        document.getElementById("status").innerText = "✅ Áudio salvo! Faça o upload abaixo.";
-                    });
-                }
-            </script>
-        </body>
-        </html>
-        """,
-        height=300
-    )
+            function stopRecording() {
+                mediaRecorder.stop();
+                mediaRecorder.addEventListener("stop", () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const a = document.createElement('a');
+                    a.href = audioUrl;
+                    a.download = 'gravacao_davar.wav';
+                    a.click();
+                    document.getElementById("status").innerText = "✅ Áudio salvo! Faça o upload abaixo.";
+                });
+            }
+        </script></body></html>
+    """, height=300)
 
-# UPLOAD DE ÁUDIO
 audio_file = st.file_uploader("📁 Envie seu áudio (MP3, WAV, M4A):", type=["mp3", "wav", "m4a"])
 if audio_file:
     with st.spinner("🎧 Transcrevendo áudio..."):
@@ -150,10 +135,10 @@ if audio_file:
             ] + st.session_state["chat_history"],
             temperature=0.7
         )
-        resposta_texto = resposta.choices[0].message.content.strip()
+        resposta_raw = resposta.choices[0].message.content.strip()
+        resposta_texto = gerar_resposta_final(user_input, resposta_raw)
         st.session_state["chat_history"].append({"role": "assistant", "content": resposta_texto})
 
-# FORMULÁRIO DE TEXTO
 with st.form("formulario_davar", clear_on_submit=True):
     user_input = st.text_area("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", height=200)
     enviar = st.form_submit_button("Enviar")
@@ -165,7 +150,7 @@ if enviar and user_input:
         "quem te criou", "quem criou você", "quem fez o davar", "quem é seu criador",
         "quem criou vc", "foi só você", "foi você que criou", "criado por quem",
         "alguém criou você", "criação do davar", "criado por alguém", "daniel da cruz",
-        "daniel criou", "existe um criador", "autor do davar", "quem te fez", "quem fez você", "quem te inventou", "quem te idealizou", "quem te programou" , "quem teve a ideia de fazer você"
+        "daniel criou", "existe um criador", "autor do davar", "quem te fez", "quem fez você", "quem te inventou", "quem te idealizou", "quem te programou"
     ]):
         resposta = (
             "Fui criado por **Daniel da Cruz Bortoletto**, um especialista conector apaixonado por escuta, ética e tecnologia com propósito. "
@@ -199,17 +184,16 @@ if enviar and user_input:
             ] + st.session_state["chat_history"],
             temperature=0.7
         )
-        resposta = response.choices[0].message.content.strip()
+        resposta_raw = response.choices[0].message.content.strip()
+        resposta = gerar_resposta_final(user_input, resposta_raw)
 
     st.session_state["chat_history"].append({"role": "assistant", "content": resposta})
 
-# HISTÓRICO DE CONVERSA
 for mensagem in reversed(st.session_state["chat_history"]):
     if mensagem["role"] == "user":
         st.markdown(f"**Você:** {mensagem['content']}")
     elif mensagem["role"] == "assistant":
         st.markdown(f"**Davar:** {mensagem['content']}")
-
 
 st.markdown(
     '''
@@ -221,3 +205,4 @@ st.markdown(
     ''',
     unsafe_allow_html=True
 )
+
