@@ -219,7 +219,8 @@ with st.form("form_feedback"):
 
 if enviar_feedback and feedback_input.strip():
     try:
-        gc = gspread.service_account_from_dict(st.secrets["gspread"])
+       import json
+gc = gspread.service_account_from_dict(json.loads(json.dumps(st.secrets["gspread"])))
         sh = gc.open("Feedback Davar")
         worksheet = sh.worksheet("Respostas")
         worksheet.append_row([str(datetime.now()), feedback_input.strip()])
