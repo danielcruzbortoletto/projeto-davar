@@ -3,7 +3,7 @@ from openai import OpenAI
 import os
 import io
 import streamlit.components.v1 as components
-
+import random
 from datetime import datetime
 
 # CONFIGURAÇÃO DA PÁGINA
@@ -15,7 +15,8 @@ with st.sidebar:
     st.markdown("""
     O **Davar** é um espaço de escuta com presença.
 
-    Aqui, você pode escrever ou falar livremente — sem julgamentos, sem pressa.
+    Você não precisa ter pressa. Nem saber o que dizer.
+    Aqui, pode apenas respirar, sentir e — se quiser — compartilhar algo.
 
     **Como usar:**
     - Grave ou escreva sua pergunta, desabafo ou reflexão.
@@ -64,6 +65,17 @@ st.markdown("""
 > Um espaço para respirar, pensar, sentir e recomeçar.  
 > 🔒 Nenhuma conversa é salva. Ao fechar esta aba, tudo é apagado.
 """)
+
+# Sugestão inspiradora
+perguntas_inspiradoras = [
+    "O que você gostaria que alguém soubesse sobre você hoje?",
+    "Há quanto tempo você não se sente escutado de verdade?",
+    "Qual foi o último momento de silêncio que te tocou?",
+    "Tem algo no seu coração pedindo para ser nomeado?",
+    "Você quer conversar sobre o que sente ou só estar aqui por um instante?"
+]
+sugestao = random.choice(perguntas_inspiradoras)
+st.markdown(f"🧭 *Sugestão para começar:* “{sugestao}”")
 
 # ESTADO INICIAL
 if "chat_history" not in st.session_state:
@@ -200,6 +212,9 @@ for mensagem in reversed(st.session_state["chat_history"]):
     elif mensagem["role"] == "assistant":
         st.markdown(f"**Davar:** {mensagem['content']}")
 
-# RODAPÉ DE FEEDBACK (com link em vez de formulário)
+# MENSAGEM FINAL
+st.markdown("🌿 Se quiser, volte quando quiser. Eu continuo aqui.")
+
+# RODAPÉ DE FEEDBACK
 st.markdown("---")
 st.markdown("🫶 **Gostou da conversa?** [Compartilhe ou deixe um comentário no nosso Instagram → @projetodavar](https://www.instagram.com/projetodavar/)", unsafe_allow_html=True)
