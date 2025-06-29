@@ -168,7 +168,7 @@ if enviar and user_input:
     mensagem = user_input.lower()
 
     if any(p in mensagem for p in [
-        "quem te criou", "daniel da cruz", "autor do davar", "quem fez você", "quem te desenvolveu", "quem te idealizou", "quem te desenhou"
+        "quem te criou", "quem te fez", "daniel da cruz", "autor do davar", "quem fez você", "quem te desenvolveu", "quem te idealizou", "quem te desenhou"
     ]):
         resposta = (
             "Fui criado por **Daniel da Cruz Bortoletto**, um especialista conector apaixonado por escuta, ética e tecnologia com propósito. "
@@ -184,7 +184,7 @@ if enviar and user_input:
             "Estou aqui com você, como uma presença que te escuta com respeito e humanidade."
         )
     elif any(p in mensagem for p in [
-        "qual seu site", "tem site", "projeto davar", "site oficial", "endereço do site"
+        "qual seu site", "tem site", "projeto davar", "site oficial", "endereço do site", "saber mais sobre você"
     ]):
         resposta = (
             "Você pode saber mais no site oficial: [www.projetodavar.com](https://www.projetodavar.com)  \n"
