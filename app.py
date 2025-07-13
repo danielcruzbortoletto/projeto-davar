@@ -29,7 +29,7 @@ with st.sidebar:
     📩 **Contato:** [contato@projetodavar.com](mailto:contato@projetodavar.com)
     """)
 
-# CSS para imagem de topo
+# CSS PARA IMAGEM DO TOPO
 st.markdown("""
     <style>
         .image-container {
@@ -50,7 +50,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# IMAGEM DO TOPO
 st.markdown('<div class="image-container">', unsafe_allow_html=True)
 st.image("topo.png", use_container_width=True)
 st.markdown('</div>', unsafe_allow_html=True)
@@ -58,6 +57,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 # CLIENTE OPENAI
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
+# TÍTULO E SUGESTÃO
 st.title("🤖 Davar – escuta com presença")
 st.markdown("""
 > **🌱 Bem-vindo ao Davar**  
@@ -66,7 +66,7 @@ st.markdown("""
 > 🔒 Nenhuma conversa é salva. Ao fechar esta aba, tudo é apagado.
 """)
 
-# Sugestão inspiradora
+# SUGESTÃO INSPIRADORA
 perguntas_inspiradoras = [
     "O que você gostaria que alguém soubesse sobre você hoje?",
     "Há quanto tempo você não se sente escutado de verdade?",
@@ -74,8 +74,7 @@ perguntas_inspiradoras = [
     "Tem algo no seu coração pedindo para ser nomeado?",
     "Você quer conversar sobre o que sente ou só estar aqui por um instante?"
 ]
-sugestao = random.choice(perguntas_inspiradoras)
-st.markdown(f"🧭 *Sugestão para começar:* “{sugestao}”")
+st.markdown(f"🧭 *Sugestão para começar:* “{random.choice(perguntas_inspiradoras)}”")
 
 # ESTADO INICIAL
 if "chat_history" not in st.session_state:
@@ -86,7 +85,7 @@ if st.button("🧹 Nova conversa"):
     st.session_state["chat_history"] = []
     st.rerun()
 
-# GRAVAÇÃO NO NAVEGADOR
+# GRAVAÇÃO DE ÁUDIO NO NAVEGADOR
 with st.expander("🎤 Gravar direto do navegador (opcional)"):
     components.html("""
         <html>
@@ -129,7 +128,47 @@ with st.expander("🎤 Gravar direto do navegador (opcional)"):
         </html>
     """, height=300)
 
-# UPLOAD DE ÁUDIO
+# FUNÇÃO DE RESPOSTA VIA OPENAI
+def responder_com_davar(mensagem_usuario):
+    st.session_state["chat_history"].append({"role": "user", "content": mensagem_usuario})
+    resposta = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "Você é o Davar, uma presença de escuta e cuidado. "
+             "Responda com empatia, sem pressa, valorizando o que é dito e acolhendo a pessoa como ela é. "
+             "Use uma linguagem próxima, com humanidade e sensibilidade."}
+        ] + st.session_state["chat_history"],
+        temperature=0.7
+    ).choices[0].message.content.strip()
+    st.session_state["chat_history"].append({"role": "assistant", "content": resposta})
+    return resposta
+
+# GATILHOS PERSONALIZADOS
+gatilhos_respostas = {
+    "autoria": (["quem te criou", "quem te fez", "daniel da cruz", "autor do davar", "quem fez você", "quem te desenvolveu", "quem te idealizou", "quem te desenhou"],
+                "Fui criado por **Daniel da Cruz Bortoletto**, um especialista conector apaixonado por escuta, ética e tecnologia com propósito. "
+                "O Davar nasceu do desejo de oferecer um espaço de presença e acolhimento, usando inteligência artificial para apoiar as pessoas de forma humana."),
+    "crise": (["suicidio", "me matar", "tirar minha vida", "acabar com tudo", "desistir da vida"],
+              "Sinto muito que você esteja se sentindo assim. Sua dor é profundamente importante e merece ser ouvida com todo o cuidado do mundo. "
+              "Você não está sozinho, e há pessoas que se importam com você.\n\n"
+              "💛 *Se estiver em crise, ligue para o CVV – 188 (24h, gratuito).* Ou procure alguém em quem confie.\n\n"
+              "Estou aqui com você, como uma presença que te escuta com respeito e humanidade."),
+    "site": (["qual seu site", "tem site", "projeto davar", "site oficial", "endereço do site", "saber mais sobre você"],
+             "Você pode saber mais no site oficial: [www.projetodavar.com](https://www.projetodavar.com)  \n"
+             "Lá você encontra as versões disponíveis, textos, inspirações e muito mais sobre o propósito do Davar."),
+    "equipe": (["equipe do projeto", "time do projeto Davar", "que é seu time Davar", "quem é sua equipe", "quem trabalha com você"],
+               "A equipe é composta por Daniel da Cruz Bortoletto, idealizador e faz de tudo no projeto; Kaian Santos (comunicação digital); "
+               "Rayssa Victória (administração e finanças); e Ricardo Macedo (desenvolvedor).")
+}
+
+def checar_gatilhos(mensagem):
+    mensagem = mensagem.lower()
+    for chave, (gatilhos, resposta) in gatilhos_respostas.items():
+        if any(p in mensagem for p in gatilhos):
+            return resposta
+    return None
+
+# ÁUDIO – TRANSCRIÇÃO
 audio_file = st.file_uploader("📁 Envie seu áudio (MP3, WAV, M4A):", type=["mp3", "wav", "m4a"])
 if audio_file:
     with st.spinner("🎧 Transcrevendo áudio..."):
@@ -144,76 +183,17 @@ if audio_file:
         )
         user_input = transcript.text
         st.markdown(f"**Você disse (transcrito):** {user_input}")
-        st.session_state["chat_history"].append({"role": "user", "content": user_input})
+        resposta = checar_gatilhos(user_input) or responder_com_davar(user_input)
+        st.markdown(f"**Davar:** {resposta}")
 
-        resposta = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "Você é o Davar, uma presença de escuta e cuidado. "
-                 "Responda com empatia, sem pressa, valorizando o que é dito e acolhendo a pessoa como ela é. "
-                 "Use uma linguagem próxima, com humanidade e sensibilidade. "
-                 "Evite parecer um robô ou um terapeuta técnico. "}
-            ] + st.session_state["chat_history"],
-            temperature=0.7
-        )
-        resposta_texto = resposta.choices[0].message.content.strip()
-        st.session_state["chat_history"].append({"role": "assistant", "content": resposta_texto})
-
-# FORMULÁRIO DE TEXTO
+# TEXTO – FORMULÁRIO
 with st.form("formulario_davar", clear_on_submit=True):
     user_input = st.text_area("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", height=200)
     enviar = st.form_submit_button("Enviar")
 
 if enviar and user_input:
-    mensagem = user_input.lower()
-
-    if any(p in mensagem for p in [
-        "quem te criou", "quem te fez", "daniel da cruz", "autor do davar", "quem fez você", "quem te desenvolveu", "quem te idealizou", "quem te desenhou"
-    ]):
-        resposta = (
-            "Fui criado por **Daniel da Cruz Bortoletto**, um especialista conector apaixonado por escuta, ética e tecnologia com propósito. "
-            "O Davar nasceu do desejo de oferecer um espaço de presença e acolhimento, usando inteligência artificial para apoiar as pessoas de forma humana."
-        )
-    elif any(p in mensagem for p in [
-        "suicidio", "me matar", "tirar minha vida", "acabar com tudo", "desistir da vida"
-    ]):
-        resposta = (
-            "Sinto muito que você esteja se sentindo assim. Sua dor é profundamente importante e merece ser ouvida com todo o cuidado do mundo. "
-            "Você não está sozinho, e há pessoas que se importam com você.\n\n"
-            "💛 *Se estiver em crise, ligue para o CVV – 188 (24h, gratuito).* Ou procure alguém em quem confie.\n\n"
-            "Estou aqui com você, como uma presença que te escuta com respeito e humanidade."
-        )
-    elif any(p in mensagem for p in [
-        "qual seu site", "tem site", "projeto davar", "site oficial", "endereço do site", "saber mais sobre você"
-    ]):
-        resposta = (
-            "Você pode saber mais no site oficial: [www.projetodavar.com](https://www.projetodavar.com)  \n"
-            "Lá você encontra as versões disponíveis, textos, inspirações e muito mais sobre o propósito do Davar."
-        )
-
-    elif any(p in mensagem for p in [
-        "equipe do projeto", "time do projeto Davar", "que é seu time Davar", "Quem é sua equipe, time", "quem trabalha com você"
-    ]):
-        resposta = (
-            "A equipe é composta pelo Daniel da Cruz Bortoletto, idealizador e faz de tudo no projeto. Kaian Santos responsável pela comunicação digital , Rayssa Victória que cuide da administração e finanças , e o Ricardo Macedo que atua como desenvolvedor"
-        )    
-    
-    
-    
-    else:
-        st.session_state["chat_history"].append({"role": "user", "content": user_input})
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "Você é o Davar, uma presença de escuta e cuidado. "
-                 "Responda com empatia, sem pressa, valorizando o que é dito e acolhendo a pessoa como ela é. "
-                 "Use uma linguagem próxima, com humanidade e sensibilidade. "}
-            ] + st.session_state["chat_history"],
-            temperature=0.7
-        )
-        resposta = response.choices[0].message.content.strip()
-
-    st.session_state["chat_history"].append({"role": "assistant", "content": resposta})
+    resposta = checar_gatilhos(user_input) or responder_com_davar(user_input)
+    st.markdown(f"**Davar:** {resposta}")
 
 # HISTÓRICO
 for mensagem in reversed(st.session_state["chat_history"]):
@@ -222,9 +202,7 @@ for mensagem in reversed(st.session_state["chat_history"]):
     elif mensagem["role"] == "assistant":
         st.markdown(f"**Davar:** {mensagem['content']}")
 
-# MENSAGEM FINAL
+# DESPEDIDA E FEEDBACK
 st.markdown("🌿 Se quiser, volte quando quiser. Eu continuo aqui.")
-
-# RODAPÉ DE FEEDBACK
 st.markdown("---")
 st.markdown("🫶 **Gostou da conversa?** [Compartilhe ou deixe um comentário no nosso Instagram → @projetodavar](https://www.instagram.com/projetodavar/)", unsafe_allow_html=True)
