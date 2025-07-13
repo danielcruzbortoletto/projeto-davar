@@ -190,6 +190,16 @@ if enviar and user_input:
             "Você pode saber mais no site oficial: [www.projetodavar.com](https://www.projetodavar.com)  \n"
             "Lá você encontra as versões disponíveis, textos, inspirações e muito mais sobre o propósito do Davar."
         )
+
+    elif any(p in mensagem for p in [
+        "equipe do projeto", "time do projeto Davar", "que é seu time Davar", "Quem é sua equipe, time", "quem trabalha com você"
+    ]):
+        resposta = (
+            "A equipe é composta pelo Daniel da Cruz Bortoletto, idealizador e faz de tudo no projeto. Kaian Santos responsável pela comunicação digital , Rayssa Victória que cuide da administração e finanças , e o Ricardo Macedo que atua como desenvolvedor"
+        )    
+    
+    
+    
     else:
         st.session_state["chat_history"].append({"role": "user", "content": user_input})
         response = client.chat.completions.create(
