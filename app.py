@@ -66,7 +66,6 @@ st.markdown("""
 > 🔒 Nenhuma conversa é salva. Ao fechar esta aba, tudo é apagado.
 """)
 
-# SUGESTÃO INSPIRADORA
 perguntas_inspiradoras = [
     "O que você gostaria que alguém soubesse sobre você hoje?",
     "Há quanto tempo você não se sente escutado de verdade?",
@@ -128,7 +127,7 @@ with st.expander("🎤 Gravar direto do navegador (opcional)"):
         </html>
     """, height=300)
 
-# FUNÇÃO DE RESPOSTA VIA OPENAI
+# FUNÇÃO DE RESPOSTA
 def responder_com_davar(mensagem_usuario):
     st.session_state["chat_history"].append({"role": "user", "content": mensagem_usuario})
     resposta = client.chat.completions.create(
@@ -145,30 +144,49 @@ def responder_com_davar(mensagem_usuario):
 
 # GATILHOS PERSONALIZADOS
 gatilhos_respostas = {
-    "autoria": (["quem te criou", "quem te fez", "daniel da cruz", "autor do davar", "quem fez você", "quem te desenvolveu", "quem te idealizou", "quem te desenhou"],
-                "Fui criado por **Daniel da Cruz Bortoletto**, um especialista conector apaixonado por escuta, ética e tecnologia com propósito. "
-                "O Davar nasceu do desejo de oferecer um espaço de presença e acolhimento, usando inteligência artificial para apoiar as pessoas de forma humana."),
-    "crise": (["suicidio", "me matar", "tirar minha vida", "acabar com tudo", "desistir da vida"],
-              "Sinto muito que você esteja se sentindo assim. Sua dor é profundamente importante e merece ser ouvida com todo o cuidado do mundo. "
-              "Você não está sozinho, e há pessoas que se importam com você.\n\n"
-              "💛 *Se estiver em crise, ligue para o CVV – 188 (24h, gratuito).* Ou procure alguém em quem confie.\n\n"
-              "Estou aqui com você, como uma presença que te escuta com respeito e humanidade."),
-    "site": (["qual seu site", "tem site", "projeto davar", "site oficial", "endereço do site", "saber mais sobre você"],
-             "Você pode saber mais no site oficial: [www.projetodavar.com](https://www.projetodavar.com)  \n"
-             "Lá você encontra as versões disponíveis, textos, inspirações e muito mais sobre o propósito do Davar."),
-    "equipe": (["equipe do projeto", "time do projeto Davar", "que é seu time Davar", "quem é sua equipe", "quem trabalha com você"],
-               "A equipe é composta por Daniel da Cruz Bortoletto, idealizador e faz de tudo no projeto; Kaian Santos (comunicação digital); "
-               "Rayssa Victória (administração e finanças); e Ricardo Macedo (desenvolvedor).")
+    "autoria": (
+        ["quem te criou", "quem te fez", "daniel da cruz", "autor do davar", "quem fez você", "quem te desenvolveu", "quem te idealizou", "quem te desenhou"],
+        "Fui criado por **Daniel da Cruz Bortoletto**, um especialista conector apaixonado por escuta, ética e tecnologia com propósito. "
+        "O Davar nasceu do desejo de oferecer um espaço de presença e acolhimento, usando inteligência artificial para apoiar as pessoas de forma humana."
+    ),
+    "crise": (
+        ["suicidio", "me matar", "tirar minha vida", "acabar com tudo", "desistir da vida"],
+        "Sinto muito que você esteja se sentindo assim. Sua dor é profundamente importante e merece ser ouvida com todo o cuidado do mundo. "
+        "Você não está sozinho, e há pessoas que se importam com você.\n\n"
+        "💛 *Se estiver em crise, ligue para o CVV – 188 (24h, gratuito).* Ou procure alguém em quem confie.\n\n"
+        "Estou aqui com você, como uma presença que te escuta com respeito e humanidade."
+    ),
+    "site": (
+        ["qual seu site", "tem site", "projeto davar", "site oficial", "endereço do site", "saber mais sobre você"],
+        "Você pode saber mais no site oficial: [www.projetodavar.com](https://www.projetodavar.com)  \n"
+        "Lá você encontra as versões disponíveis, textos, inspirações e muito mais sobre o propósito do Davar."
+    ),
+    "equipe": (
+        [
+            "equipe do projeto",
+            "quem está com você",
+            "quem faz parte do projeto",
+            "quem está no time",
+            "quem trabalha com você",
+            "quem são vocês",
+            "time do davar",
+            "quem é sua equipe",
+            "quem participa do projeto"
+        ],
+        "A equipe é composta por **Daniel da Cruz Bortoletto**, idealizador e faz de tudo no projeto; "
+        "**Kaian Santos** (comunicação digital), **Rayssa Victória** (administração e finanças), "
+        "e **Ricardo Macedo** (desenvolvedor)."
+    )
 }
 
 def checar_gatilhos(mensagem):
     mensagem = mensagem.lower()
-    for chave, (gatilhos, resposta) in gatilhos_respostas.items():
+    for _, (gatilhos, resposta) in gatilhos_respostas.items():
         if any(p in mensagem for p in gatilhos):
             return resposta
     return None
 
-# ÁUDIO – TRANSCRIÇÃO
+# TRANSCRIÇÃO DE ÁUDIO
 audio_file = st.file_uploader("📁 Envie seu áudio (MP3, WAV, M4A):", type=["mp3", "wav", "m4a"])
 if audio_file:
     with st.spinner("🎧 Transcrevendo áudio..."):
@@ -186,7 +204,7 @@ if audio_file:
         resposta = checar_gatilhos(user_input) or responder_com_davar(user_input)
         st.markdown(f"**Davar:** {resposta}")
 
-# TEXTO – FORMULÁRIO
+# FORMULÁRIO DE TEXTO
 with st.form("formulario_davar", clear_on_submit=True):
     user_input = st.text_area("✍️ Escreva aqui sua pergunta, desabafo ou reflexão:", height=200)
     enviar = st.form_submit_button("Enviar")
